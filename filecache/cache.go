@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log"
 	"os"
-	pathPkg "path"
+	"path"
 	"path/filepath"
 	"sync"
 	"time"
@@ -72,8 +72,12 @@ func NewCache(root string) (ret *Cache, err error) {
 	return
 }
 
-func sanitizePath(path string) string {
-	return path
+func sanitizePath(p string) (ret string) {
+	ret = path.Clean(p)
+	if ret[0] == '/' {
+		ret = ret[1:]
+	}
+	return
 }
 
 // Leaf is a descendent of root.
@@ -111,13 +115,29 @@ func (me *Cache) Remove(path string) (err error) {
 	return
 }
 
+var (
+	ErrBadPath = errors.New("bad path")
+	ErrIsDir   = errors.New("is directory")
+)
+
 func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 	path = sanitizePath(path)
 	if flag&os.O_CREATE != 0 {
+		os.MkdirAll(me.root, 0755)
 		os.MkdirAll(filepath.Dir(me.realpath(path)), 0755)
 	}
 	f, err := os.OpenFile(filepath.Join(me.root, path), flag, 0644)
 	if err != nil {
+		me.pruneEmptyDirs(path)
+		return
+	}
+	fi, err := f.Stat()
+	if err != nil {
+		me.pruneEmptyDirs(path)
+		return
+	}
+	if fi.IsDir() {
+		err = ErrIsDir
 		return
 	}
 	ret = &File{
@@ -125,6 +145,7 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 		path: path,
 		f:    f,
 	}
+	me.AccessedItem(path)
 	return
 }
 
@@ -164,6 +185,14 @@ func (me *Cache) insertItem(i ItemInfo) *list.Element {
 		}
 	}
 	return me.items.PushBack(i)
+}
+
+func (me *Cache) AccessedItem(path string) {
+	me.UpdateItem(path, time.Now())
+}
+
+func (me *Cache) accessedItem(path string) {
+	me.updateItem(path, time.Now())
 }
 
 func (me *Cache) UpdateItem(path string, access time.Time) {
@@ -228,7 +257,7 @@ func (me *Cache) TrimToCapacity() {
 }
 
 func (me *Cache) pruneEmptyDirs(path string) {
-	pruneEmptyDirs(me.root, filepath.FromSlash(pathPkg.Dir(path)))
+	pruneEmptyDirs(me.root, me.realpath(path))
 }
 
 func (me *Cache) remove(path string) (err error) {

@@ -5,7 +5,6 @@ import (
 	"math"
 	"os"
 	"sync"
-	"time"
 )
 
 type File struct {
@@ -13,6 +12,15 @@ type File struct {
 	c    *Cache
 	path string
 	f    *os.File
+}
+
+func (me *File) detach() {
+	me.f.Close()
+}
+
+func (me *File) Remove() (err error) {
+	me.detach()
+	return me.c.Remove(me.path)
 }
 
 func (me *File) Seek(offset int64, whence int) (ret int64, err error) {
@@ -31,6 +39,9 @@ func (me *File) maxWrite() (max int64, err error) {
 		return
 	}
 	max = me.c.capacity - pos
+	if max < 0 {
+		max = 0
+	}
 	return
 }
 
@@ -53,7 +64,7 @@ func (me *File) Write(b []byte) (n int, err error) {
 	}
 	n, err = me.f.Write(b)
 	me.c.mu.Lock()
-	me.c.updateItem(me.path, time.Now())
+	me.c.accessedItem(me.path)
 	me.c.trimToCapacity()
 	_, ok := me.c.paths[me.path]
 	me.c.mu.Unlock()
