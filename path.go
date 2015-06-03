@@ -5,6 +5,7 @@ import (
 	"path"
 )
 
+// Splits the pathname p into Root and Ext, such that Root+Ext==p.
 func PathSplitExt(p string) (ret struct {
 	Root, Ext string
 }) {
