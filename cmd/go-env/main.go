@@ -7,6 +7,6 @@ import (
 
 func main() {
 	for _, v := range os.Environ() {
-		fmt.Fprintf(os.Stderr, "%s\n", v)
+		fmt.Printf("%s\n", v)
 	}
 }
