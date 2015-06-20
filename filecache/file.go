@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"sync"
+	"time"
 )
 
 type File struct {
@@ -12,21 +13,16 @@ type File struct {
 	c    *Cache
 	path string
 	f    *os.File
-}
-
-func (me *File) detach() {
-	me.f.Close()
+	gone bool
 }
 
 func (me *File) Remove() (err error) {
-	me.detach()
 	return me.c.Remove(me.path)
 }
 
 func (me *File) Seek(offset int64, whence int) (ret int64, err error) {
-	me.mu.Lock()
-	defer me.mu.Unlock()
-	return me.f.Seek(offset, whence)
+	ret, err = me.f.Seek(offset, whence)
+	return
 }
 
 func (me *File) maxWrite() (max int64, err error) {
@@ -50,48 +46,59 @@ var (
 	ErrFileDisappeared = errors.New("file disappeared")
 )
 
+func (me *File) checkGone() {
+	if me.gone {
+		return
+	}
+	ffi, _ := me.Stat()
+	fsfi, _ := os.Stat(me.c.realpath(me.path))
+	me.gone = !os.SameFile(ffi, fsfi)
+}
+
+func (me *File) goneErr() error {
+	me.mu.Lock()
+	defer me.mu.Unlock()
+	me.checkGone()
+	if me.gone {
+		me.f.Close()
+		return ErrFileDisappeared
+	}
+	return nil
+}
+
 func (me *File) Write(b []byte) (n int, err error) {
-	me.c.mu.Lock()
-	mw, err := me.maxWrite()
-	me.c.mu.Unlock()
+	err = me.goneErr()
 	if err != nil {
 		return
 	}
-	tooLarge := false
-	if int64(len(b)) > mw {
-		b = b[:mw]
-		tooLarge = true
-	}
 	n, err = me.f.Write(b)
 	me.c.mu.Lock()
-	me.c.accessedItem(me.path)
+	me.c.statItem(me.path, time.Now())
 	me.c.trimToCapacity()
-	_, ok := me.c.paths[me.path]
 	me.c.mu.Unlock()
-	if !ok {
-		n = 0
-		err = ErrFileDisappeared
-		me.f.Close()
-		return
-	}
-	if tooLarge && err == nil && n == len(b) {
-		err = ErrFileTooLarge
+	if err == nil {
+		err = me.goneErr()
 	}
 	return
 }
 
-func (me *File) Close() (err error) {
-	err = me.f.Close()
-	if err == nil {
-		go me.c.ProbeItem(me.path)
-	}
-	return
+func (me *File) Close() error {
+	return me.f.Close()
 }
 
 func (me *File) Stat() (os.FileInfo, error) {
 	return me.f.Stat()
 }
 
-func (me *File) Read(b []byte) (int, error) {
+func (me *File) Read(b []byte) (n int, err error) {
+	err = me.goneErr()
+	if err != nil {
+		return
+	}
+	defer func() {
+		me.c.mu.Lock()
+		defer me.c.mu.Unlock()
+		me.c.statItem(me.path, time.Now())
+	}()
 	return me.f.Read(b)
 }
