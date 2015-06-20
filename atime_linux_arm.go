@@ -1,5 +1,3 @@
-// +build !arm
-
 package missinggo
 
 import (
@@ -10,5 +8,5 @@ import (
 
 func fileInfoAccessTime(fi os.FileInfo) time.Time {
 	ts := fi.Sys().(*syscall.Stat_t).Atim
-	return time.Unix(ts.Sec, ts.Nsec)
+	return time.Unix(int64(ts.Sec), int64(ts.Nsec))
 }
