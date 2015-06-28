@@ -43,7 +43,6 @@ func TestExponent(t *testing.T) {
 		{"-2", time.Millisecond},
 		{"-3", 500 * time.Microsecond},
 		{"-3", 100 * time.Microsecond},
-		{"-4", 10 * time.Microsecond},
 	} {
 		tr := NewTimer()
 		time.Sleep(c.d)
