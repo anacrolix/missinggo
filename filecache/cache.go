@@ -226,7 +226,7 @@ func (me *Cache) statItem(path string, access time.Time) {
 		info.Accessed = access
 	}
 	if info.Accessed.IsZero() {
-		access = missinggo.FileInfoAccessTime(fi)
+		info.Accessed = missinggo.FileInfoAccessTime(fi)
 	}
 	info.Size = fi.Size()
 	me.filled += info.Size
