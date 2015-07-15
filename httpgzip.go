@@ -31,7 +31,7 @@ write:
 // Gzips response body if the request says it'll allow it.
 func GzipHTTPHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") || w.Header().Get("Content-Encoding") != "" || w.Header().Get("Vary") != "" {
 			h.ServeHTTP(w, r)
 			return
 		}
