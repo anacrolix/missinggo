@@ -36,6 +36,7 @@ func GzipHTTPHandler(h http.Handler) http.Handler {
 			return
 		}
 		w.Header().Set("Content-Encoding", "gzip")
+		w.Header().Set("Vary", "Accept-Encoding")
 		gz := gzip.NewWriter(w)
 		defer gz.Close()
 		h.ServeHTTP(&gzipResponseWriter{
