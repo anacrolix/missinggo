@@ -1,7 +1,7 @@
 package perf
 
 import (
-	"expvar"
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -14,9 +14,7 @@ func TestTimer(t *testing.T) {
 	tr := NewTimer()
 	tr.Stop("hiyo")
 	tr.Stop("hiyo")
-	em.Get("hiyo").(*expvar.Map).Do(func(kv expvar.KeyValue) {
-		t.Log(kv.Key, kv.Value)
-	})
+	t.Log(em.Get("hiyo").(*buckets))
 }
 
 func BenchmarkStopWarm(b *testing.B) {
@@ -35,18 +33,20 @@ func BenchmarkStopCold(b *testing.B) {
 
 func TestExponent(t *testing.T) {
 	for _, c := range []struct {
-		s string
+		e int
 		d time.Duration
 	}{
-		{"-1", 10 * time.Millisecond},
-		{"-2", 5 * time.Millisecond},
-		{"-2", time.Millisecond},
-		{"-3", 500 * time.Microsecond},
-		{"-3", 100 * time.Microsecond},
+		{-1, 10 * time.Millisecond},
+		{-2, 5 * time.Millisecond},
+		{-2, time.Millisecond},
+		{-3, 500 * time.Microsecond},
+		{-3, 100 * time.Microsecond},
 	} {
 		tr := NewTimer()
 		time.Sleep(c.d)
-		assert.Equal(t, c.s, tr.Stop(c.s), "%s", c.d)
+		assert.Equal(t, c.e, bucketExponent(tr.Stop(fmt.Sprintf("%d", c.e))), "%s", c.d)
 	}
-	t.Log(em)
+	assert.Equal(t, `{-1: 1}`, em.Get("-1").String())
+	assert.Equal(t, `{-2: 2}`, em.Get("-2").String())
+	assert.Equal(t, `{-3: 2}`, em.Get("-3").String())
 }
