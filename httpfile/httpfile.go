@@ -155,7 +155,7 @@ var (
 )
 
 func GetLength(url string) (ret int64, err error) {
-	resp, err := http.Get(url)
+	resp, err := http.Head(url)
 	if err != nil {
 		return
 	}
