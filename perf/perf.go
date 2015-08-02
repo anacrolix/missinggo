@@ -23,8 +23,6 @@ func NewTimer() Timer {
 	return Timer{time.Now()}
 }
 
-// var es = [...]string{"-9", "-8", "-7", "-6", "-5", "-4", "-3", "-2", "-1", "0", "1", "2"}
-
 func bucketExponent(d time.Duration) int {
 	e := -9
 	for d != 0 {
