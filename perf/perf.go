@@ -75,18 +75,16 @@ func (t *Timer) Stop(desc string) time.Duration {
 	mu.RLock()
 	_m := em.Get(desc)
 	mu.RUnlock()
-	var m *buckets
 	if _m == nil {
 		mu.Lock()
 		_m = em.Get(desc)
 		if _m == nil {
-			m = new(buckets)
-			em.Set(desc, m)
+			_m = new(buckets)
+			em.Set(desc, _m)
 		}
 		mu.Unlock()
-	} else {
-		m = _m.(*buckets)
 	}
+	m := _m.(*buckets)
 	m.Add(d)
 	return d
 }
