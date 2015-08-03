@@ -154,6 +154,7 @@ var (
 	ErrNotFound = errors.New("not found")
 )
 
+// Returns the length of the resource in bytes.
 func GetLength(url string) (ret int64, err error) {
 	resp, err := http.Head(url)
 	if err != nil {
