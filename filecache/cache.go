@@ -119,6 +119,8 @@ func pruneEmptyDirs(root string, leaf string) (err error) {
 
 func (me *Cache) Remove(path string) (err error) {
 	path = sanitizePath(path)
+	me.mu.Lock()
+	defer me.mu.Unlock()
 	err = me.remove(path)
 	return
 }
