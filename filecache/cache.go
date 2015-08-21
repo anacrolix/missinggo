@@ -1,7 +1,6 @@
 package filecache
 
 import (
-	"container/list"
 	"errors"
 	"log"
 	"os"
@@ -17,8 +16,8 @@ type Cache struct {
 	mu       sync.Mutex
 	capacity int64
 	filled   int64
-	items    *list.List
-	paths    map[string]*list.Element
+	items    *lruItems
+	paths    map[string]ItemInfo
 	root     string
 }
 
@@ -36,11 +35,11 @@ type ItemInfo struct {
 
 // Calls the function for every item known to the cache. The ItemInfo should
 // not be modified.
-func (me *Cache) WalkItems(cb func(*ItemInfo)) {
+func (me *Cache) WalkItems(cb func(ItemInfo)) {
 	me.mu.Lock()
 	defer me.mu.Unlock()
 	for e := me.items.Front(); e != nil; e = e.Next() {
-		cb(e.Value.(*ItemInfo))
+		cb(e.Value().(ItemInfo))
 	}
 }
 
@@ -161,8 +160,8 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 
 func (me *Cache) rescan() {
 	me.filled = 0
-	me.items = list.New()
-	me.paths = make(map[string]*list.Element)
+	me.items = newLRUItems()
+	me.paths = make(map[string]ItemInfo)
 	err := filepath.Walk(me.root, func(path string, info os.FileInfo, err error) error {
 		if os.IsNotExist(err) {
 			return nil
@@ -186,23 +185,18 @@ func (me *Cache) rescan() {
 	}
 }
 
-// Inserts the item into its sorted position. Items are usually being updated
-// so start at the back.
-func (me *Cache) insertItem(i *ItemInfo) *list.Element {
-	for e := me.items.Back(); e != nil; e = e.Prev() {
-		if i.Accessed.After(e.Value.(*ItemInfo).Accessed) {
-			return me.items.InsertAfter(i, e)
-		}
-	}
-	return me.items.PushFront(i)
+func (me *Cache) insertItem(i ItemInfo) {
+	me.items.Insert(i)
 }
 
-func (me *Cache) removeInfo(path string) (ret *ItemInfo) {
-	e, ok := me.paths[path]
+func (me *Cache) removeInfo(path string) (ret ItemInfo, ok bool) {
+	ret, ok = me.paths[path]
 	if !ok {
 		return
 	}
-	ret = me.items.Remove(e).(*ItemInfo)
+	if !me.items.Remove(ret) {
+		panic(ret)
+	}
 	me.filled -= ret.Size
 	delete(me.paths, path)
 	return
@@ -211,7 +205,7 @@ func (me *Cache) removeInfo(path string) (ret *ItemInfo) {
 // Triggers the item for path to be updated. If access is non-zero, set the
 // item's access time to that value, otherwise deduce it appropriately.
 func (me *Cache) statItem(path string, access time.Time) {
-	info := me.removeInfo(path)
+	info, ok := me.removeInfo(path)
 	fi, err := os.Stat(me.realpath(path))
 	if os.IsNotExist(err) {
 		return
@@ -219,10 +213,8 @@ func (me *Cache) statItem(path string, access time.Time) {
 	if err != nil {
 		panic(err)
 	}
-	if info == nil {
-		info = &ItemInfo{
-			Path: path,
-		}
+	if !ok {
+		info.Path = path
 	}
 	if !access.IsZero() {
 		info.Accessed = access
@@ -232,7 +224,8 @@ func (me *Cache) statItem(path string, access time.Time) {
 	}
 	info.Size = fi.Size()
 	me.filled += info.Size
-	me.paths[path] = me.insertItem(info)
+	me.insertItem(info)
+	me.paths[path] = info
 }
 
 func (me *Cache) realpath(path string) string {
@@ -264,7 +257,11 @@ func (me *Cache) trimToCapacity() {
 		return
 	}
 	for me.filled > me.capacity {
-		item := me.items.Front().Value.(*ItemInfo)
+		item := me.items.LRU()
 		me.remove(item.Path)
 	}
+}
+
+func (me *Cache) pathInfo(p string) ItemInfo {
+	return me.paths[p]
 }
