@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+// A http.ResponseWriter that tracks the status of the response. The status
+// code, and number of bytes written for example.
 type StatusResponseWriter struct {
 	RW           http.ResponseWriter
 	Code         int
