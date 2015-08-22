@@ -1,6 +1,11 @@
 package filecache
 
-import "container/list"
+import (
+	"container/list"
+	"io"
+
+	"github.com/cznic/b"
+)
 
 type Iterator interface {
 	Next() Iterator
@@ -24,48 +29,66 @@ func (me listElementIterator) Value() interface{} {
 }
 
 func newLRUItems() *lruItems {
-	return &lruItems{list.New(), make(map[ItemInfo]*list.Element)}
+	return &lruItems{b.TreeNew(func(_a, _b interface{}) int {
+		a := _a.(ItemInfo)
+		b := _b.(ItemInfo)
+		if a.Accessed != b.Accessed {
+			if a.Accessed.Before(b.Accessed) {
+				return -1
+			} else {
+				return 1
+			}
+		}
+		if a.Path == b.Path {
+			return 0
+		}
+		if a.Path < b.Path {
+			return -1
+		}
+		return 1
+	})}
 }
 
 type lruItems struct {
-	list  *list.List
-	elems map[ItemInfo]*list.Element
+	tree *b.Tree
+}
+
+type bEnumeratorIterator struct {
+	e *b.Enumerator
+	v ItemInfo
+}
+
+func (me bEnumeratorIterator) Next() Iterator {
+	_, v, err := me.e.Next()
+	if err == io.EOF {
+		return nil
+	}
+	return bEnumeratorIterator{me.e, v.(ItemInfo)}
+}
+
+func (me bEnumeratorIterator) Value() interface{} {
+	return me.v
 }
 
 func (me *lruItems) Front() Iterator {
-	e := me.list.Front()
+	e, _ := me.tree.SeekFirst()
 	if e == nil {
 		return nil
 	}
-	return listElementIterator{e}
+	return bEnumeratorIterator{
+		e: e,
+	}.Next()
 }
 
 func (me *lruItems) LRU() ItemInfo {
-	return me.list.Front().Value.(ItemInfo)
-}
-
-func (me *lruItems) insertList(ii ItemInfo) *list.Element {
-	for e := me.list.Back(); e != nil; e = e.Prev() {
-		if ii.Accessed.After(e.Value.(ItemInfo).Accessed) {
-			return me.list.InsertAfter(ii, e)
-		}
-	}
-	return me.list.PushFront(ii)
+	_, v := me.tree.First()
+	return v.(ItemInfo)
 }
 
 func (me *lruItems) Insert(ii ItemInfo) {
-	le := me.insertList(ii)
-	me.elems[ii] = le
+	me.tree.Set(ii, ii)
 }
 
 func (me *lruItems) Remove(ii ItemInfo) bool {
-	e, ok := me.elems[ii]
-	if !ok {
-		return false
-	}
-	delete(me.elems, ii)
-	if me.list.Remove(e).(ItemInfo) != ii {
-		panic("f7u12")
-	}
-	return true
+	return me.tree.Delete(ii)
 }
