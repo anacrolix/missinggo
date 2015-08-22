@@ -15,6 +15,10 @@ type StatusResponseWriter struct {
 
 var _ http.ResponseWriter = &StatusResponseWriter{}
 
+func (me *StatusResponseWriter) CloseNotify() <-chan bool {
+	return me.RW.(http.CloseNotifier).CloseNotify()
+}
+
 func (me *StatusResponseWriter) Header() http.Header {
 	return me.RW.Header()
 }
