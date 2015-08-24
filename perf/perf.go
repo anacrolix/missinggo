@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"expvar"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -61,7 +62,8 @@ func (me *buckets) String() string {
 		} else {
 			fmt.Fprintf(&b, ", ")
 		}
-		fmt.Fprintf(&b, "%d: %d", i-9, count)
+		key := strconv.Itoa(i-9)
+		fmt.Fprintf(&b, "%q: %d", key, count)
 	}
 	me.mu.Unlock()
 	fmt.Fprintf(&b, "}")
