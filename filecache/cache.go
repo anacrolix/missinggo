@@ -65,7 +65,7 @@ func NewCache(root string) (ret *Cache, err error) {
 	}
 	ret = &Cache{
 		root:     root,
-		capacity: -1,
+		capacity: -1, // unlimited
 	}
 	ret.mu.Lock()
 	go func() {
