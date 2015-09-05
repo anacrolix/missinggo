@@ -1,7 +1,9 @@
 package missinggo
 
 import (
+	"bufio"
 	"io"
+	"net"
 	"net/http"
 )
 
@@ -15,8 +17,16 @@ type StatusResponseWriter struct {
 
 var _ http.ResponseWriter = &StatusResponseWriter{}
 
+func (me *StatusResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	return me.RW.(http.Hijacker).Hijack()
+}
+
 func (me *StatusResponseWriter) CloseNotify() <-chan bool {
 	return me.RW.(http.CloseNotifier).CloseNotify()
+}
+
+func (me *StatusResponseWriter) Flush() {
+	me.RW.(http.Flusher).Flush()
 }
 
 func (me *StatusResponseWriter) Header() http.Header {
