@@ -20,3 +20,7 @@ func ParseHostPort(hostPort string) (ret HostPort) {
 	}
 	return
 }
+
+func (me *HostPort) Join() string {
+	return net.JoinHostPort(me.Host, me.Port)
+}
