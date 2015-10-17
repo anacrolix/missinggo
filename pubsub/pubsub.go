@@ -23,12 +23,26 @@ type Subscription struct {
 }
 
 func NewPubSub() (ret *PubSub) {
-	return &PubSub{
-		next: make(chan item, 1),
+	return new(PubSub)
+}
+
+func (me *PubSub) init() {
+	me.next = make(chan item, 1)
+}
+
+func (me *PubSub) lazyInit() {
+	me.mu.Lock()
+	defer me.mu.Unlock()
+	if me.closed {
+		return
+	}
+	if me.next == nil {
+		me.init()
 	}
 }
 
 func (me *PubSub) Publish(v interface{}) {
+	me.lazyInit()
 	next := make(chan item, 1)
 	i := item{v, next}
 	me.mu.Lock()
@@ -70,6 +84,7 @@ func (me *Subscription) runner() {
 }
 
 func (me *PubSub) Subscribe() (ret *Subscription) {
+	me.lazyInit()
 	ret = &Subscription{
 		closed: make(chan struct{}),
 		Values: make(chan interface{}),
@@ -87,6 +102,8 @@ func (me *PubSub) Close() {
 	if me.closed {
 		return
 	}
-	close(me.next)
+	if me.next != nil {
+		close(me.next)
+	}
 	me.closed = true
 }
