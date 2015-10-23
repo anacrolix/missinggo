@@ -18,6 +18,7 @@ type File struct {
 	rOff   int64
 	length int64
 	url    string
+	flags  int
 }
 
 func OpenSectionReader(url string, off, n int64) (ret io.ReadCloser, err error) {
@@ -44,9 +45,10 @@ func OpenSectionReader(url string, off, n int64) (ret io.ReadCloser, err error) 
 	return
 }
 
-func Open(url string) *File {
+func Open(url string, flags int) *File {
 	return &File{
-		url: url,
+		url:   url,
+		flags: flags,
 	}
 }
 
@@ -154,6 +156,10 @@ func (me *File) Seek(offset int64, whence int) (ret int64, err error) {
 }
 
 func (me *File) Write(b []byte) (n int, err error) {
+	if me.flags&(os.O_WRONLY|os.O_RDWR) == 0 || me.flags&os.O_CREATE == 0 {
+		err = errors.New("cannot write without write and create flags")
+		return
+	}
 	req, err := http.NewRequest("PATCH", me.url, bytes.NewReader(b))
 	if err != nil {
 		return
