@@ -45,11 +45,15 @@ func OpenSectionReader(url string, off, n int64) (ret io.ReadCloser, err error) 
 	return
 }
 
-func Open(url string, flags int) *File {
-	return &File{
+func Open(url string, flags int) (ret *File, err error) {
+	ret = &File{
 		url:   url,
 		flags: flags,
 	}
+	if flags&os.O_CREATE == 0 {
+		err = ret.prepareReader()
+	}
+	return
 }
 
 func (me *File) prepareReader() (err error) {
@@ -59,6 +63,10 @@ func (me *File) prepareReader() (err error) {
 	}
 	if me.r != nil {
 		return nil
+	}
+	if me.flags&missinggo.O_ACCMODE == os.O_WRONLY {
+		err = errors.New("read flags missing")
+		return
 	}
 	req, err := http.NewRequest("GET", me.url, nil)
 	if err != nil {
@@ -95,6 +103,10 @@ func (me *File) prepareReader() (err error) {
 			}
 			me.length = int64(cl)
 		}
+	case http.StatusNotFound:
+		err = ErrNotFound
+		resp.Body.Close()
+		return
 	default:
 		err = errors.New(resp.Status)
 		resp.Body.Close()
