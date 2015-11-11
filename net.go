@@ -22,5 +22,8 @@ func ParseHostPort(hostPort string) (ret HostPort) {
 }
 
 func (me *HostPort) Join() string {
+	if me.Port == "" {
+		return me.Host
+	}
 	return net.JoinHostPort(me.Host, me.Port)
 }
