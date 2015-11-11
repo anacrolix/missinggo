@@ -46,8 +46,10 @@ func (me *PubSub) Publish(v interface{}) {
 	next := make(chan item, 1)
 	i := item{v, next}
 	me.mu.Lock()
-	me.next <- i
-	me.next = next
+	if !me.closed {
+		me.next <- i
+		me.next = next
+	}
 	me.mu.Unlock()
 }
 
