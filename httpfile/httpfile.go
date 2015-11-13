@@ -193,7 +193,7 @@ func (me *File) Write(b []byte) (n int, err error) {
 }
 
 var (
-	ErrNotFound = errors.New("not found")
+	ErrNotFound = os.ErrNotExist
 )
 
 // Returns the length of the resource in bytes.
