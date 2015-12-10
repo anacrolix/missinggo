@@ -1,4 +1,4 @@
-package missinggo
+package httptoo
 
 import (
 	"net/http"
@@ -21,10 +21,6 @@ func CopyURL(u *url.URL) (ret *url.URL) {
 func RequestedURL(r *http.Request) (ret *url.URL) {
 	ret = CopyURL(r.URL)
 	ret.Host = r.Host
-	if r.TLS != nil {
-		ret.Scheme = "https"
-	} else {
-		ret.Scheme = "http"
-	}
+	ret.Scheme = OriginatingProtocol(r)
 	return
 }
