@@ -2,7 +2,6 @@ package missinggo
 
 import (
 	"bufio"
-	"io"
 	"net"
 	"net/http"
 )
@@ -45,16 +44,4 @@ func (me *StatusResponseWriter) Write(b []byte) (n int, err error) {
 func (me *StatusResponseWriter) WriteHeader(code int) {
 	me.RW.WriteHeader(code)
 	me.Code = code
-}
-
-type ReaderFromStatusResponseWriter struct {
-	StatusResponseWriter
-	io.ReaderFrom
-}
-
-func NewReaderFromStatusResponseWriter(w http.ResponseWriter) *ReaderFromStatusResponseWriter {
-	return &ReaderFromStatusResponseWriter{
-		StatusResponseWriter{RW: w},
-		w.(io.ReaderFrom),
-	}
 }
