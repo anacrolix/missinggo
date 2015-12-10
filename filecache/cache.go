@@ -52,6 +52,7 @@ func (me *Cache) Info() (ret CacheInfo) {
 	return
 }
 
+// Setting a negative capacity means unlimited.
 func (me *Cache) SetCapacity(capacity int64) {
 	me.mu.Lock()
 	defer me.mu.Unlock()

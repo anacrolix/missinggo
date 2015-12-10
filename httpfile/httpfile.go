@@ -128,6 +128,7 @@ func (me *File) Read(b []byte) (n int, err error) {
 	return
 }
 
+// Returns -1 length if it can't determined.
 func instanceLength(r *http.Response) (int64, error) {
 	switch r.StatusCode {
 	case http.StatusOK:
