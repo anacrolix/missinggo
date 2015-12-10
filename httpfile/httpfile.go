@@ -47,11 +47,23 @@ func OpenSectionReader(url string, off, n int64) (ret io.ReadCloser, err error) 
 
 func Open(url string, flags int) (ret *File, err error) {
 	ret = &File{
-		url:   url,
-		flags: flags,
+		url:    url,
+		flags:  flags,
+		length: -1,
 	}
 	if flags&os.O_CREATE == 0 {
-		err = ret.prepareReader()
+		err = ret.headLength()
+	}
+	return
+}
+
+func (me *File) headLength() (err error) {
+	l, err := GetLength(me.url)
+	if err != nil {
+		return
+	}
+	if l != -1 {
+		me.length = l
 	}
 	return
 }
@@ -155,9 +167,14 @@ func (me *File) Seek(offset int64, whence int) (ret int64, err error) {
 	case os.SEEK_CUR:
 		ret = me.off + offset
 	case os.SEEK_END:
-		if me.length < 0 {
-			err = errors.New("length unknown")
-			return
+		// Try to update the resource length.
+		err = me.headLength()
+		if err != nil {
+			if me.length == -1 {
+				// Don't even have an old value.
+				return
+			}
+			err = nil
 		}
 		ret = me.length + offset
 	default:
@@ -213,6 +230,7 @@ func GetLength(url string) (ret int64, err error) {
 
 func (me *File) Close() error {
 	me.url = ""
+	me.length = -1
 	if me.r != nil {
 		me.r.Close()
 		me.r = nil
