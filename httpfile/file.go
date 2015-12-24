@@ -21,42 +21,6 @@ type File struct {
 	flags  int
 }
 
-func OpenSectionReader(url string, off, n int64) (ret io.ReadCloser, err error) {
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return
-	}
-	req.Header.Set("Range", fmt.Sprintf("bytes=%d-%d", off, off+n-1))
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return
-	}
-	if resp.StatusCode == http.StatusNotFound {
-		err = ErrNotFound
-		resp.Body.Close()
-		return
-	}
-	if resp.StatusCode != http.StatusPartialContent {
-		err = fmt.Errorf("bad response status: %s", resp.Status)
-		resp.Body.Close()
-		return
-	}
-	ret = resp.Body
-	return
-}
-
-func Open(url string, flags int) (ret *File, err error) {
-	ret = &File{
-		url:    url,
-		flags:  flags,
-		length: -1,
-	}
-	if flags&os.O_CREATE == 0 {
-		err = ret.headLength()
-	}
-	return
-}
-
 func (me *File) headLength() (err error) {
 	l, err := GetLength(me.url)
 	if err != nil {
@@ -140,26 +104,6 @@ func (me *File) Read(b []byte) (n int, err error) {
 	return
 }
 
-// Returns -1 length if it can't determined.
-func instanceLength(r *http.Response) (int64, error) {
-	switch r.StatusCode {
-	case http.StatusOK:
-		if h := r.Header.Get("Content-Length"); h != "" {
-			return strconv.ParseInt(h, 10, 64)
-		} else {
-			return -1, nil
-		}
-	case http.StatusPartialContent:
-		cr, ok := missinggo.ParseHTTPBytesContentRange(r.Header.Get("Content-Range"))
-		if !ok {
-			return -1, errors.New("bad 206 response")
-		}
-		return cr.Length, nil
-	default:
-		return -1, errors.New(r.Status)
-	}
-}
-
 func (me *File) Seek(offset int64, whence int) (ret int64, err error) {
 	switch whence {
 	case os.SEEK_SET:
@@ -210,24 +154,6 @@ func (me *File) Write(b []byte) (n int, err error) {
 	return
 }
 
-var (
-	ErrNotFound = os.ErrNotExist
-)
-
-// Returns the length of the resource in bytes.
-func GetLength(url string) (ret int64, err error) {
-	resp, err := http.Head(url)
-	if err != nil {
-		return
-	}
-	resp.Body.Close()
-	if resp.StatusCode == http.StatusNotFound {
-		err = ErrNotFound
-		return
-	}
-	return instanceLength(resp)
-}
-
 func (me *File) Close() error {
 	me.url = ""
 	me.length = -1
@@ -236,24 +162,4 @@ func (me *File) Close() error {
 		me.r = nil
 	}
 	return nil
-}
-
-func Delete(urlStr string) (err error) {
-	req, err := http.NewRequest("DELETE", urlStr, nil)
-	if err != nil {
-		return
-	}
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return
-	}
-	resp.Body.Close()
-	if resp.StatusCode == http.StatusNotFound {
-		err = ErrNotFound
-		return
-	}
-	if resp.StatusCode != 200 {
-		err = fmt.Errorf("response: %s", resp.Status)
-	}
-	return
 }
