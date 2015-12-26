@@ -50,7 +50,7 @@ func (fs *FS) OpenSectionReader(url string, off, n int64) (ret io.ReadCloser, er
 		return
 	}
 	req.Header.Set("Range", fmt.Sprintf("bytes=%d-%d", off, off+n-1))
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := fs.Client.Do(req)
 	if err != nil {
 		return
 	}
@@ -73,6 +73,7 @@ func (fs *FS) Open(url string, flags int) (ret *File, err error) {
 		url:    url,
 		flags:  flags,
 		length: -1,
+		fs:     fs,
 	}
 	if flags&os.O_CREATE == 0 {
 		err = ret.headLength()

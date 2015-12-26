@@ -19,10 +19,11 @@ type File struct {
 	length int64
 	url    string
 	flags  int
+	fs     *FS
 }
 
 func (me *File) headLength() (err error) {
-	l, err := GetLength(me.url)
+	l, err := me.fs.GetLength(me.url)
 	if err != nil {
 		return
 	}
@@ -51,7 +52,7 @@ func (me *File) prepareReader() (err error) {
 	if me.off != 0 {
 		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", me.off))
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := me.fs.Client.Do(req)
 	if err != nil {
 		return
 	}
@@ -140,7 +141,7 @@ func (me *File) Write(b []byte) (n int, err error) {
 	}
 	req.Header.Set("Content-Range", fmt.Sprintf("bytes=%d-", me.off))
 	req.ContentLength = int64(len(b))
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := me.fs.Client.Do(req)
 	if err != nil {
 		return
 	}
