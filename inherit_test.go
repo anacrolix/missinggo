@@ -36,7 +36,7 @@ func TestInheritVisibleImplemented(t *testing.T) {
 	var i io.Reader
 	s := class{
 		base:    &os.File{},
-		visible: struct{ io.ReadCloser }{},
+		visible: new(io.ReadCloser),
 	}
 	Dispatch(&i, s)
 	assert.NotNil(t, i)
@@ -46,7 +46,7 @@ func TestInheritNotImplemented(t *testing.T) {
 	var i io.Reader
 	s := class{
 		base:    struct{}{},
-		visible: struct{ io.ReadCloser }{},
+		visible: new(io.ReadCloser),
 	}
 	Dispatch(&i, s)
 	assert.Nil(t, i)
@@ -56,7 +56,7 @@ func TestInheritNotVisible(t *testing.T) {
 	var i io.Reader
 	s := class{
 		base:    &os.File{},
-		visible: struct{}{},
+		visible: new(interface{}),
 	}
 	Dispatch(&i, s)
 	assert.Nil(t, i)
