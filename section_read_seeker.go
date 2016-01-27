@@ -33,7 +33,9 @@ func (me *sectionReadSeeker) Seek(off int64, whence int) (ret int64, err error) 
 		err = fmt.Errorf("unhandled whence: %d", whence)
 		return
 	}
-	return me.base.Seek(off, whence)
+	ret, err = me.base.Seek(off, whence)
+	ret -= me.off
+	return
 }
 
 func (me *sectionReadSeeker) Read(b []byte) (n int, err error) {
