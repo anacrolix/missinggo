@@ -49,7 +49,7 @@ func (me *sectionReadSeeker) Read(b []byte) (n int, err error) {
 	if err != nil {
 		return
 	}
-	left := me.off + me.size - off
+	left := me.size - off
 	if left <= 0 {
 		err = io.EOF
 		return
