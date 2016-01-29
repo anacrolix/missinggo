@@ -17,7 +17,13 @@ func NewSectionReadSeeker(base io.ReadSeeker, off, size int64) (ret io.ReadSeeke
 		off:  off,
 		size: size,
 	}
-	ret.Seek(0, os.SEEK_SET)
+	seekOff, err := ret.Seek(0, os.SEEK_SET)
+	if err != nil {
+		panic(err)
+	}
+	if seekOff != 0 {
+		panic(seekOff)
+	}
 	return
 }
 
