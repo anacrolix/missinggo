@@ -16,7 +16,7 @@ func (me *fd) Closed() {
 
 func Add(skip int) (ret *fd) {
 	ret = new(fd)
-	p.Add(ret, skip+1)
+	p.Add(ret, skip+2)
 	return
 }
 
