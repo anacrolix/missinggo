@@ -39,3 +39,10 @@ func SliceIterator(a []interface{}) Iterator {
 func StringIterator(a string) Iterator {
 	return SliceIterator(missinggo.ConvertToSliceOfEmptyInterface(a))
 }
+
+func IteratorAsSlice(it Iterator) (ret []interface{}) {
+	for it.Next() {
+		ret = append(ret, it.Value())
+	}
+	return
+}
