@@ -16,14 +16,22 @@ type PriorityBitmap struct {
 	mu         sync.RWMutex
 }
 
+func (me *PriorityBitmap) Clear() {
+	me.inited = false
+	me.om = nil
+}
+
 func (me *PriorityBitmap) delete(key int) {
 	p, ok := me.priorities[key]
 	if !ok {
 		return
 	}
-	keys := me.om.Get(p).(map[int]struct{})
 	me.mu.Lock()
+	keys := me.om.Get(p).(map[int]struct{})
 	delete(keys, key)
+	if len(keys) == 0 {
+		me.om.Unset(p)
+	}
 	me.mu.Unlock()
 }
 
@@ -72,12 +80,9 @@ func (me *PriorityBitmap) IterTyped() *Iter {
 	ret := &Iter{
 		it: me.om.Iter(),
 		ch: make(chan int),
+		mu: &me.mu,
 	}
 	close(ret.ch)
 	me.mu.RLock()
-	go func() {
-		ret.stopped.Wait()
-		me.mu.RUnlock()
-	}()
 	return ret
 }

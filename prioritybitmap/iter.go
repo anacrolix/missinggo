@@ -6,28 +6,38 @@ import (
 )
 
 type Iter struct {
-	it      *orderedmap.Iter
-	ch      chan int
-	cur     int
+	it *orderedmap.Iter
+	ch chan int
+	// The current iterator value.
+	cur int
+	// Whether there is a valid iterator value available.
 	ok      bool
 	stopped missinggo.Event
+	// RLocked once when the Iter is created, with a nested RLock while
+	// iterating each priority slot.
+	mu missinggo.RWLocker
 }
 
 // Sends the bits in a priority slot. Avoid reference to *Iter in case GC
 // collection is used.
-func sendSet(out chan int, stop <-chan struct{}, set map[int]struct{}) {
-	defer close(out)
-	for i := range set {
+func (me *Iter) sendSet() {
+	defer close(me.ch)
+	me.mu.RLock()
+	defer me.mu.RUnlock()
+	for i := range me.it.Value().(map[int]struct{}) {
 		select {
-		case out <- i:
-		case <-stop:
+		case me.ch <- i:
+		case <-me.stopped.C():
 			return
 		}
 	}
 }
 
 func (me *Iter) Stop() {
-	me.stopped.Set()
+	if me.stopped.Set() {
+		me.mu.RUnlock()
+	}
+	me.ok = false
 }
 
 func (me *Iter) Next() bool {
@@ -47,7 +57,7 @@ func (me *Iter) Next() bool {
 			return false
 		}
 		me.ch = make(chan int)
-		go sendSet(me.ch, me.stopped.C(), me.it.Value().(map[int]struct{}))
+		go me.sendSet()
 	}
 }
 
