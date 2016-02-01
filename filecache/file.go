@@ -6,13 +6,15 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/anacrolix/missinggo/pproffd"
 )
 
 type File struct {
 	mu   sync.Mutex
 	c    *Cache
 	path string
-	f    *os.File
+	f    pproffd.OSFile
 	gone bool
 }
 

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/anacrolix/missinggo"
+	"github.com/anacrolix/missinggo/pproffd"
 )
 
 type Cache struct {
@@ -151,7 +152,7 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 	ret = &File{
 		c:    me,
 		path: path,
-		f:    f,
+		f:    pproffd.WrapOSFile(f),
 	}
 	me.mu.Lock()
 	go func() {

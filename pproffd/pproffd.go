@@ -3,6 +3,7 @@ package pproffd
 import (
 	"io"
 	"net"
+	"os"
 	"runtime/pprof"
 )
 
@@ -30,25 +31,47 @@ func (me closeWrapper) Close() error {
 	return me.c.Close()
 }
 
-func newCloseWrapper(c io.Closer, skip int) io.Closer {
+func newCloseWrapper(c io.Closer) closeWrapper {
 	return closeWrapper{
-		fd: Add(skip + 1),
+		fd: Add(2),
 		c:  c,
 	}
 }
 
 type wrappedNetConn struct {
 	net.Conn
-	io.Closer
+	closeWrapper
 }
 
 func (me wrappedNetConn) Close() error {
-	return me.Closer.Close()
+	return me.closeWrapper.Close()
 }
 
 func WrapNetConn(nc net.Conn) net.Conn {
 	return wrappedNetConn{
 		nc,
-		newCloseWrapper(nc, 1),
+		newCloseWrapper(nc),
 	}
+}
+
+type OSFile interface {
+	io.Reader
+	io.Seeker
+	io.Closer
+	io.Writer
+	Stat() (os.FileInfo, error)
+	io.ReaderAt
+}
+
+type wrappedOSFile struct {
+	*os.File
+	closeWrapper
+}
+
+func (me wrappedOSFile) Close() error {
+	return me.closeWrapper.Close()
+}
+
+func WrapOSFile(f *os.File) OSFile {
+	return &wrappedOSFile{f, newCloseWrapper(f)}
 }
