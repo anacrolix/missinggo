@@ -18,7 +18,6 @@ type PriorityBitmap struct {
 
 func (me *PriorityBitmap) Clear() {
 	me.inited = false
-	me.om = nil
 }
 
 func (me *PriorityBitmap) delete(key int) {
@@ -67,6 +66,7 @@ func (me *PriorityBitmap) Remove(key int) {
 		return
 	}
 	me.delete(key)
+	delete(me.priorities, key)
 }
 
 func (me *PriorityBitmap) Iter() itertools.Iterator {

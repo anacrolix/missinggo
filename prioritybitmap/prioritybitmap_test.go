@@ -54,3 +54,10 @@ func TestRemoveWhileIterating(t *testing.T) {
 	// Next was called.
 	assert.EqualValues(t, []interface{}(nil), itertools.IteratorAsSlice(it))
 }
+
+func TestDoubleRemove(t *testing.T) {
+	var pb PriorityBitmap
+	pb.Set(0, 0)
+	pb.Remove(0)
+	assert.NotPanics(t, func() { pb.Remove(0) })
+}
