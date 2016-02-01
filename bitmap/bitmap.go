@@ -1,6 +1,10 @@
 package bitmap
 
-import "github.com/RoaringBitmap/roaring"
+import (
+	"github.com/RoaringBitmap/roaring"
+
+	"github.com/anacrolix/missinggo/itertools"
+)
 
 // Bitmaps store the existence of values in [0,math.MaxUint32] more
 // efficiently than []bool. The empty value starts with no bits set.
@@ -9,7 +13,11 @@ type Bitmap struct {
 	rb     *roaring.RoaringBitmap
 }
 
-func (me *Bitmap) Iter() *Iter {
+func (me *Bitmap) Iter() itertools.Iterator {
+	return me.IterTyped()
+}
+
+func (me *Bitmap) IterTyped() *Iter {
 	if me.rb == nil {
 		return nil
 	}
@@ -54,6 +62,12 @@ func (me *Iter) Next() bool {
 	return me.ii.HasNext()
 }
 
-func (me *Iter) Value() int {
+func (me *Iter) Value() interface{} {
+	return me.ValueInt()
+}
+
+func (me *Iter) ValueInt() int {
 	return int(me.ii.Next())
 }
+
+func (me *Iter) Stop() {}

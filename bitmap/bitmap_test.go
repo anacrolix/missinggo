@@ -16,8 +16,8 @@ func TestEmptyBitmap(t *testing.T) {
 }
 
 func bitmapSlice(bm *Bitmap) (ret []int) {
-	for it := bm.Iter(); it.Next(); {
-		ret = append(ret, it.Value())
+	for it := bm.IterTyped(); it.Next(); {
+		ret = append(ret, it.ValueInt())
 	}
 	return
 }
