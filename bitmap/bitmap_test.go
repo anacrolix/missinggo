@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNilBitmap(t *testing.T) {
-	var bm *Bitmap
+func TestEmptyBitmap(t *testing.T) {
+	var bm Bitmap
 	assert.False(t, bm.Contains(0))
 	bm.Remove(0)
 	it := bm.Iter()
@@ -23,7 +23,7 @@ func bitmapSlice(bm *Bitmap) (ret []int) {
 }
 
 func TestSimpleBitmap(t *testing.T) {
-	bm := New()
+	bm := new(Bitmap)
 	assert.EqualValues(t, []int(nil), bitmapSlice(bm))
 	bm.Add(0)
 	assert.True(t, bm.Contains(0))

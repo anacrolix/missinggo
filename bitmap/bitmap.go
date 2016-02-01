@@ -2,34 +2,42 @@ package bitmap
 
 import "github.com/RoaringBitmap/roaring"
 
+// Bitmaps store the existence of values in [0,math.MaxUint32] more
+// efficiently than []bool. The empty value starts with no bits set.
 type Bitmap struct {
-	rb *roaring.RoaringBitmap
-}
-
-func New() *Bitmap {
-	return &Bitmap{roaring.NewRoaringBitmap()}
+	inited bool
+	rb     *roaring.RoaringBitmap
 }
 
 func (me *Bitmap) Iter() *Iter {
-	if me == nil {
+	if me.rb == nil {
 		return nil
 	}
 	return &Iter{me.rb.Iterator()}
 }
 
+func (me *Bitmap) lazyInit() {
+	if me.inited {
+		return
+	}
+	me.rb = roaring.NewRoaringBitmap()
+	me.inited = true
+}
+
 func (me *Bitmap) Add(i int) {
+	me.lazyInit()
 	me.rb.AddInt(i)
 }
 
 func (me *Bitmap) Remove(i int) {
-	if me == nil {
+	if me.rb == nil {
 		return
 	}
 	me.rb.Remove(uint32(i))
 }
 
 func (me *Bitmap) Contains(i int) bool {
-	if me == nil {
+	if me.rb == nil {
 		return false
 	}
 	return me.rb.Contains(uint32(i))
