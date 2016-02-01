@@ -42,3 +42,15 @@ func TestNextAfterIterFinished(t *testing.T) {
 	assert.False(t, it.Next())
 	assert.False(t, it.Next())
 }
+
+func TestRemoveWhileIterating(t *testing.T) {
+	var pb PriorityBitmap
+	pb.Set(0, 0)
+	pb.Set(1, 1)
+	it := pb.Iter()
+	go it.Stop()
+	pb.Remove(0)
+	// This should return an empty list, as the iterator was stopped before
+	// Next was called.
+	assert.EqualValues(t, []interface{}(nil), itertools.IteratorAsSlice(it))
+}

@@ -3,8 +3,9 @@
 package prioritybitmap
 
 import (
-	"runtime"
+	"sync"
 
+	"github.com/anacrolix/missinggo/itertools"
 	"github.com/anacrolix/missinggo/orderedmap"
 )
 
@@ -12,6 +13,7 @@ type PriorityBitmap struct {
 	inited     bool
 	om         *orderedmap.OrderedMap
 	priorities map[int]int
+	mu         sync.RWMutex
 }
 
 func (me *PriorityBitmap) delete(key int) {
@@ -20,7 +22,9 @@ func (me *PriorityBitmap) delete(key int) {
 		return
 	}
 	keys := me.om.Get(p).(map[int]struct{})
+	me.mu.Lock()
 	delete(keys, key)
+	me.mu.Unlock()
 }
 
 func (me *PriorityBitmap) getMake(priority int) map[int]struct{} {
@@ -50,63 +54,30 @@ func (me *PriorityBitmap) Set(key int, priority int) {
 	me.priorities[key] = priority
 }
 
-type Iter struct {
-	it  *orderedmap.Iter
-	ch  chan int
-	cur int
-	ok  bool
-	gc  chan struct{}
-}
-
-func (me *Iter) sendSet() {
-	set := me.it.Value().(map[int]struct{})
-	for i := range set {
-		me.ch <- i
+func (me *PriorityBitmap) Remove(key int) {
+	if !me.inited {
+		return
 	}
-	close(me.ch)
+	me.delete(key)
 }
 
-func (me *Iter) Next() bool {
-	if me == nil {
-		return false
-	}
-	for {
-		me.cur, me.ok = <-me.ch
-		if me.ok {
-			return true
-		}
-		if !me.it.Next() {
-			return false
-		}
-		me.ch = make(chan int)
-		go me.sendSet()
-	}
+func (me *PriorityBitmap) Iter() itertools.Iterator {
+	return me.IterTyped()
 }
 
-func (me *Iter) Value() interface{} {
-	return me.ValueInt()
-}
-
-func (me *Iter) ValueInt() int {
-	if !me.ok {
-		panic("no value")
-	}
-	return me.cur
-}
-
-func (me *PriorityBitmap) Iter() *Iter {
-	if me.om == nil {
+func (me *PriorityBitmap) IterTyped() *Iter {
+	if !me.inited {
 		return nil
 	}
 	ret := &Iter{
 		it: me.om.Iter(),
 		ch: make(chan int),
-		gc: make(chan struct{}),
 	}
 	close(ret.ch)
-	runtime.SetFinalizer(ret, func(it *Iter) {
-		// Important not to hold references to ret in this function.
-		close(it.gc)
-	})
+	me.mu.RLock()
+	go func() {
+		ret.stopped.Wait()
+		me.mu.RUnlock()
+	}()
 	return ret
 }
