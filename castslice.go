@@ -25,7 +25,10 @@ func CastSlice(slicePtr interface{}, fromSlice interface{}) {
 	destSliceValue.Set(reflect.MakeSlice(destSliceValue.Type(), fromSliceValue.Len(), fromSliceValue.Len()))
 	for i := range iter.N(fromSliceValue.Len()) {
 		// The value inside the interface in the slice element.
-		itemValue := fromSliceValue.Index(i).Elem()
+		itemValue := fromSliceValue.Index(i)
+		if itemValue.Kind() == reflect.Interface {
+			itemValue = itemValue.Elem()
+		}
 		convertedItem := itemValue.Convert(destSliceElemType)
 		destSliceValue.Index(i).Set(convertedItem)
 	}
