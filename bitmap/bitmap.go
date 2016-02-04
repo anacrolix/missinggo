@@ -63,6 +63,10 @@ func (me *Bitmap) Remove(i int) {
 	me.rb.Remove(uint32(i))
 }
 
+func (me *Bitmap) Union(other *Bitmap) {
+	me.lazyRB().Or(other.lazyRB())
+}
+
 func (me *Bitmap) Contains(i int) bool {
 	if me.rb == nil {
 		return false
@@ -96,4 +100,8 @@ func Sub(left, right *Bitmap) *Bitmap {
 		inited: true,
 		rb:     roaring.AndNot(left.lazyRB(), right.lazyRB()),
 	}
+}
+
+func (me *Bitmap) Sub(other *Bitmap) {
+	me.lazyRB().AndNot(other.lazyRB())
 }
