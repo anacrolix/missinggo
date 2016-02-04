@@ -3,6 +3,7 @@ package bitmap
 import (
 	"github.com/RoaringBitmap/roaring"
 
+	"github.com/anacrolix/missinggo"
 	"github.com/anacrolix/missinggo/itertools"
 )
 
@@ -11,6 +12,17 @@ import (
 type Bitmap struct {
 	inited bool
 	rb     *roaring.RoaringBitmap
+}
+
+func (me *Bitmap) ToSortedSlice() (ret []int) {
+	noobs := me.lazyRB().ToArray()
+	missinggo.CastSlice(&ret, noobs)
+	return
+}
+
+func (me *Bitmap) lazyRB() *roaring.RoaringBitmap {
+	me.lazyInit()
+	return me.rb
 }
 
 func (me *Bitmap) Iter() itertools.Iterator {
@@ -32,9 +44,16 @@ func (me *Bitmap) lazyInit() {
 	me.inited = true
 }
 
-func (me *Bitmap) Add(i int) {
+func (me *Bitmap) Add(is ...int) {
 	me.lazyInit()
-	me.rb.AddInt(i)
+	for _, i := range is {
+		me.rb.AddInt(i)
+	}
+}
+
+func (me *Bitmap) AddRange(begin, end int) {
+	me.lazyInit()
+	me.rb.AddRange(uint32(begin), uint32(end))
 }
 
 func (me *Bitmap) Remove(i int) {
@@ -71,3 +90,10 @@ func (me *Iter) ValueInt() int {
 }
 
 func (me *Iter) Stop() {}
+
+func Sub(left, right *Bitmap) *Bitmap {
+	return &Bitmap{
+		inited: true,
+		rb:     roaring.AndNot(left.lazyRB(), right.lazyRB()),
+	}
+}

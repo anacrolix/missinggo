@@ -35,3 +35,16 @@ func TestSimpleBitmap(t *testing.T) {
 	bm.Remove(0)
 	assert.EqualValues(t, []int{3}, bitmapSlice(bm))
 }
+
+func TestSub(t *testing.T) {
+	var left, right Bitmap
+	left.Add(2, 5, 4)
+	right.Add(3, 2, 6)
+	assert.Equal(t, []int{4, 5}, Sub(&left, &right).ToSortedSlice())
+	assert.Equal(t, []int{3, 6}, Sub(&right, &left).ToSortedSlice())
+}
+
+func TestSubUninited(t *testing.T) {
+	var left, right Bitmap
+	assert.Equal(t, []int{}, Sub(&left, &right).ToSortedSlice())
+}
