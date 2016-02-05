@@ -14,6 +14,13 @@ type Bitmap struct {
 	rb     *roaring.RoaringBitmap
 }
 
+func (me *Bitmap) Len() int {
+	if me.rb == nil {
+		return 0
+	}
+	return int(me.rb.GetCardinality())
+}
+
 func (me *Bitmap) ToSortedSlice() (ret []int) {
 	noobs := me.lazyRB().ToArray()
 	missinggo.CastSlice(&ret, noobs)
@@ -104,4 +111,11 @@ func Sub(left, right *Bitmap) *Bitmap {
 
 func (me *Bitmap) Sub(other *Bitmap) {
 	me.lazyRB().AndNot(other.lazyRB())
+}
+
+func (me *Bitmap) Clear() {
+	if me.rb == nil {
+		return
+	}
+	me.rb.Clear()
 }
