@@ -18,11 +18,15 @@ func ConvertToSliceOfEmptyInterface(slice interface{}) (ret []interface{}) {
 
 func CastSlice(slicePtr interface{}, fromSlice interface{}) {
 	fromSliceValue := reflect.ValueOf(fromSlice)
+	fromLen := fromSliceValue.Len()
+	if fromLen == 0 {
+		return
+	}
 	// Deref the pointer to slice.
 	destSliceValue := reflect.ValueOf(slicePtr).Elem()
 	// The type of the elements of the destination slice.
 	destSliceElemType := destSliceValue.Type().Elem()
-	destSliceValue.Set(reflect.MakeSlice(destSliceValue.Type(), fromSliceValue.Len(), fromSliceValue.Len()))
+	destSliceValue.Set(reflect.MakeSlice(destSliceValue.Type(), fromLen, fromLen))
 	for i := range iter.N(fromSliceValue.Len()) {
 		// The value inside the interface in the slice element.
 		itemValue := fromSliceValue.Index(i)
