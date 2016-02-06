@@ -6,17 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNil(t *testing.T) {
-	var om *OrderedMap
-	_, ok := om.GetOk(nil)
-	assert.False(t, ok)
-	assert.Nil(t, om.Get(nil))
-	it := om.Iter()
-	assert.Panics(t, func() { it.Value() })
-	assert.False(t, it.Next())
-}
-
-func slice(om *OrderedMap) (ret []interface{}) {
+func slice(om OrderedMap) (ret []interface{}) {
 	for it := om.Iter(); it.Next(); {
 		ret = append(ret, it.Value())
 	}
@@ -36,4 +26,12 @@ func TestSimple(t *testing.T) {
 	assert.EqualValues(t, []interface{}{3, 2}, slice(om))
 	om.Set(-1, 4)
 	assert.EqualValues(t, []interface{}{4, 3, 2}, slice(om))
+}
+
+func TestIterEmpty(t *testing.T) {
+	om := New(nil)
+	it := om.Iter()
+	assert.Panics(t, func() { it.Value() })
+	assert.False(t, it.Next())
+	it.Stop()
 }
