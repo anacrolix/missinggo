@@ -4,21 +4,23 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/anacrolix/missinggo"
+	"github.com/anacrolix/missinggo/itertools"
 )
 
 func TestEmptyBitmap(t *testing.T) {
 	var bm Bitmap
 	assert.False(t, bm.Contains(0))
 	bm.Remove(0)
-	it := bm.Iter()
+	it := itertools.NewIterator(&bm)
 	assert.Panics(t, func() { it.Value() })
 	assert.False(t, it.Next())
 }
 
 func bitmapSlice(bm *Bitmap) (ret []int) {
-	for it := bm.IterTyped(); it.Next(); {
-		ret = append(ret, it.ValueInt())
-	}
+	sl := itertools.IterableAsSlice(bm)
+	missinggo.CastSlice(&ret, sl)
 	return
 }
 
@@ -46,5 +48,5 @@ func TestSub(t *testing.T) {
 
 func TestSubUninited(t *testing.T) {
 	var left, right Bitmap
-	assert.Equal(t, []int{}, Sub(&left, &right).ToSortedSlice())
+	assert.EqualValues(t, []int(nil), Sub(&left, &right).ToSortedSlice())
 }

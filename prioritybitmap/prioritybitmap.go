@@ -5,7 +5,6 @@ package prioritybitmap
 import (
 	"sync"
 
-	"github.com/anacrolix/missinggo/itertools"
 	"github.com/anacrolix/missinggo/orderedmap"
 )
 
@@ -94,27 +93,34 @@ func (me *PriorityBitmap) Remove(bit int) {
 	if len(me.priorities) == 0 {
 		me.priorities = nil
 	}
-	if me.om.Len() == 0 {
+	if me.om != nil && me.om.Len() == 0 {
 		me.om = nil
 	}
 }
 
-func (me *PriorityBitmap) Iter() itertools.Iterator {
-	return me.IterTyped()
+func (me *PriorityBitmap) Iter(f func(value interface{}) bool) {
+	me.IterTyped(func(i int) bool {
+		return f(i)
+	})
 }
 
-func (me *PriorityBitmap) IterTyped() *Iter {
-	if me.om == nil {
-		return nil
+func (me *PriorityBitmap) IterTyped(f func(i int) bool) {
+	if me == nil || me.om == nil {
+		return
 	}
-	ret := &Iter{
-		it: me.om.Iter(),
-		ch: make(chan int),
-		mu: &me.mu,
-	}
-	close(ret.ch)
-	me.mu.RLock()
-	return ret
+	me.om.Iter(func(value interface{}) bool {
+		switch v := value.(type) {
+		case int:
+			return f(v)
+		case map[int]struct{}:
+			for i := range v {
+				if !f(i) {
+					return false
+				}
+			}
+		}
+		return true
+	})
 }
 
 func (me *PriorityBitmap) IsEmpty() bool {

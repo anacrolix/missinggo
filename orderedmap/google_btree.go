@@ -1,11 +1,6 @@
 package orderedmap
 
-import (
-	"github.com/google/btree"
-
-	"github.com/anacrolix/missinggo"
-	"github.com/anacrolix/missinggo/itertools"
-)
+import "github.com/google/btree"
 
 type GoogleBTree struct {
 	bt     *btree.BTree
@@ -47,49 +42,49 @@ func (me *GoogleBTree) GetOk(key interface{}) (interface{}, bool) {
 }
 
 type googleBTreeIter struct {
-	valueCh  chan interface{}
-	stopped  missinggo.Event
-	valueOk  bool
-	curValue interface{}
+	i  btree.Item
+	bt *btree.BTree
 }
 
 func (me *googleBTreeIter) Next() bool {
-	me.curValue, me.valueOk = <-me.valueCh
-	return me.valueOk
+	if me.bt == nil {
+		return false
+	}
+	if me.i == nil {
+		me.bt.Ascend(func(i btree.Item) bool {
+			me.i = i
+			return false
+		})
+	} else {
+		var n int
+		me.bt.AscendGreaterOrEqual(me.i, func(i btree.Item) bool {
+			n++
+			if n == 1 {
+				return true
+			}
+			me.i = i
+			return false
+		})
+		if n != 2 {
+			me.i = nil
+		}
+	}
+	return me.i != nil
 }
 
 func (me *googleBTreeIter) Value() interface{} {
-	if !me.valueOk {
-		panic(me)
-	}
-	return me.curValue
+	return me.i.(googleBTreeItem).value
 }
 
 func (me *googleBTreeIter) Stop() {
-	me.stopped.Set()
+	me.bt = nil
+	me.i = nil
 }
 
-func (me *GoogleBTree) Iter() itertools.Iterator {
-	ret := &googleBTreeIter{
-		valueCh: make(chan interface{}),
-	}
-	if me.bt.Len() == 0 {
-		close(ret.valueCh)
-	} else {
-		go func() {
-			me.bt.Ascend(func(item btree.Item) bool {
-				select {
-				case ret.valueCh <- item.(googleBTreeItem).value:
-					return true
-				case <-ret.stopped.C():
-					return false
-				}
-			})
-			close(ret.valueCh)
-			ret.stopped.Set()
-		}()
-	}
-	return ret
+func (me *GoogleBTree) Iter(f func(value interface{}) bool) {
+	me.bt.Ascend(func(i btree.Item) bool {
+		return f(i.(googleBTreeItem).value)
+	})
 }
 
 func (me *GoogleBTree) Unset(key interface{}) {

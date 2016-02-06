@@ -4,12 +4,15 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/anacrolix/missinggo/itertools"
 )
 
 func slice(om OrderedMap) (ret []interface{}) {
-	for it := om.Iter(); it.Next(); {
-		ret = append(ret, it.Value())
-	}
+	om.Iter(func(i interface{}) bool {
+		ret = append(ret, i)
+		return true
+	})
 	return
 }
 
@@ -30,7 +33,7 @@ func TestSimple(t *testing.T) {
 
 func TestIterEmpty(t *testing.T) {
 	om := New(nil)
-	it := om.Iter()
+	it := itertools.NewIterator(om)
 	assert.Panics(t, func() { it.Value() })
 	assert.False(t, it.Next())
 	it.Stop()

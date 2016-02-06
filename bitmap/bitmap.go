@@ -4,7 +4,6 @@ import (
 	"github.com/RoaringBitmap/roaring"
 
 	"github.com/anacrolix/missinggo"
-	"github.com/anacrolix/missinggo/itertools"
 )
 
 // Bitmaps store the existence of values in [0,math.MaxUint32] more
@@ -32,15 +31,23 @@ func (me *Bitmap) lazyRB() *roaring.RoaringBitmap {
 	return me.rb
 }
 
-func (me *Bitmap) Iter() itertools.Iterator {
-	return me.IterTyped()
+func (me *Bitmap) Iter(f func(interface{}) bool) {
+	me.IterTyped(func(i int) bool {
+		return f(i)
+	})
 }
 
-func (me *Bitmap) IterTyped() *Iter {
+func (me Bitmap) IterTyped(f func(int) bool) bool {
 	if me.rb == nil {
-		return nil
+		return true
 	}
-	return &Iter{me.rb.Iterator()}
+	it := me.rb.Iterator()
+	for it.HasNext() {
+		if !f(int(it.Next())) {
+			return false
+		}
+	}
+	return true
 }
 
 func (me *Bitmap) lazyInit() {
