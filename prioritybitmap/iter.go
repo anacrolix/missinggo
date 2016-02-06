@@ -2,11 +2,11 @@ package prioritybitmap
 
 import (
 	"github.com/anacrolix/missinggo"
-	"github.com/anacrolix/missinggo/orderedmap"
+	"github.com/anacrolix/missinggo/itertools"
 )
 
 type Iter struct {
-	it *orderedmap.Iter
+	it itertools.Iterator
 	ch chan int
 	// The current iterator value.
 	cur int
@@ -24,11 +24,20 @@ func (me *Iter) sendSet() {
 	defer close(me.ch)
 	me.mu.RLock()
 	defer me.mu.RUnlock()
-	for i := range me.it.Value().(map[int]struct{}) {
+	switch bits := me.it.Value().(type) {
+	case int:
 		select {
-		case me.ch <- i:
+		case me.ch <- bits:
 		case <-me.stopped.C():
 			return
+		}
+	case map[int]struct{}:
+		for i := range bits {
+			select {
+			case me.ch <- i:
+			case <-me.stopped.C():
+				return
+			}
 		}
 	}
 }

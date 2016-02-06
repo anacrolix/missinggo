@@ -9,64 +9,94 @@ import (
 	"github.com/anacrolix/missinggo/orderedmap"
 )
 
+var (
+	bitSets = sync.Pool{
+		New: func() interface{} {
+			return make(map[int]struct{}, 1)
+		},
+	}
+)
+
 type PriorityBitmap struct {
-	inited     bool
-	om         *orderedmap.OrderedMap
+	om orderedmap.OrderedMap
+	// From bit index to priority
 	priorities map[int]int
-	mu         sync.RWMutex
+	// Protects modification to bits in a priority slot.
+	mu sync.RWMutex
 }
 
 func (me *PriorityBitmap) Clear() {
-	me.inited = false
+	me.om = nil
+	me.priorities = nil
 }
 
-func (me *PriorityBitmap) delete(key int) {
-	p, ok := me.priorities[key]
+func (me *PriorityBitmap) deleteBit(bit int) {
+	p, ok := me.priorities[bit]
 	if !ok {
 		return
 	}
 	me.mu.Lock()
-	keys := me.om.Get(p).(map[int]struct{})
-	delete(keys, key)
-	if len(keys) == 0 {
-		me.om.Unset(p)
+	defer me.mu.Unlock()
+	switch v := me.om.Get(p).(type) {
+	case int:
+	case map[int]struct{}:
+		delete(v, bit)
+		if len(v) != 0 {
+			return
+		}
+		bitSets.Put(v)
 	}
-	me.mu.Unlock()
+	me.om.Unset(p)
+	if me.om.Len() == 0 {
+		me.om = nil
+	}
 }
 
-func (me *PriorityBitmap) getMake(priority int) map[int]struct{} {
-	ret, ok := me.om.GetOk(priority)
-	if !ok {
-		ret = make(map[int]struct{})
-		me.om.Set(priority, ret)
-	}
-	return ret.(map[int]struct{})
+func bitLess(l, r interface{}) bool {
+	return l.(int) < r.(int)
 }
 
 func (me *PriorityBitmap) lazyInit() {
-	if me.inited {
-		return
-	}
 	me.om = orderedmap.New(func(l, r interface{}) bool {
 		return l.(int) < r.(int)
 	})
 	me.priorities = make(map[int]int)
-	me.inited = true
 }
 
-func (me *PriorityBitmap) Set(key int, priority int) {
-	me.lazyInit()
-	me.delete(key)
-	me.getMake(priority)[key] = struct{}{}
-	me.priorities[key] = priority
-}
-
-func (me *PriorityBitmap) Remove(key int) {
-	if !me.inited {
+func (me *PriorityBitmap) Set(bit int, priority int) {
+	me.deleteBit(bit)
+	if me.priorities == nil {
+		me.priorities = make(map[int]int)
+	}
+	me.priorities[bit] = priority
+	if me.om == nil {
+		me.om = orderedmap.New(bitLess)
+	}
+	_v, ok := me.om.GetOk(priority)
+	if !ok {
+		me.om.Set(priority, bit)
 		return
 	}
-	me.delete(key)
-	delete(me.priorities, key)
+	switch v := _v.(type) {
+	case int:
+		newV := bitSets.Get().(map[int]struct{})
+		newV[v] = struct{}{}
+		newV[bit] = struct{}{}
+		me.om.Set(priority, newV)
+	case map[int]struct{}:
+		v[bit] = struct{}{}
+	}
+}
+
+func (me *PriorityBitmap) Remove(bit int) {
+	me.deleteBit(bit)
+	delete(me.priorities, bit)
+	if len(me.priorities) == 0 {
+		me.priorities = nil
+	}
+	if me.om.Len() == 0 {
+		me.om = nil
+	}
 }
 
 func (me *PriorityBitmap) Iter() itertools.Iterator {
@@ -74,7 +104,7 @@ func (me *PriorityBitmap) Iter() itertools.Iterator {
 }
 
 func (me *PriorityBitmap) IterTyped() *Iter {
-	if !me.inited {
+	if me.om == nil {
 		return nil
 	}
 	ret := &Iter{
@@ -85,4 +115,11 @@ func (me *PriorityBitmap) IterTyped() *Iter {
 	close(ret.ch)
 	me.mu.RLock()
 	return ret
+}
+
+func (me *PriorityBitmap) IsEmpty() bool {
+	if me.om == nil {
+		return true
+	}
+	return me.om.Len() == 0
 }
