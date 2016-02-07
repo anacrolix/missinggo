@@ -9,8 +9,7 @@ import (
 // Bitmaps store the existence of values in [0,math.MaxUint32] more
 // efficiently than []bool. The empty value starts with no bits set.
 type Bitmap struct {
-	inited bool
-	rb     *roaring.RoaringBitmap
+	rb *roaring.RoaringBitmap
 }
 
 func (me *Bitmap) Len() int {
@@ -20,14 +19,18 @@ func (me *Bitmap) Len() int {
 	return int(me.rb.GetCardinality())
 }
 
-func (me *Bitmap) ToSortedSlice() (ret []int) {
-	noobs := me.lazyRB().ToArray()
-	missinggo.CastSlice(&ret, noobs)
+func (me Bitmap) ToSortedSlice() (ret []int) {
+	if me.rb == nil {
+		return
+	}
+	missinggo.CastSlice(&ret, me.rb.ToArray())
 	return
 }
 
 func (me *Bitmap) lazyRB() *roaring.RoaringBitmap {
-	me.lazyInit()
+	if me.rb == nil {
+		me.rb = roaring.NewRoaringBitmap()
+	}
 	return me.rb
 }
 
@@ -50,24 +53,18 @@ func (me Bitmap) IterTyped(f func(int) bool) bool {
 	return true
 }
 
-func (me *Bitmap) lazyInit() {
-	if me.inited {
-		return
-	}
-	me.rb = roaring.NewRoaringBitmap()
-	me.inited = true
-}
-
 func (me *Bitmap) Add(is ...int) {
-	me.lazyInit()
+	rb := me.lazyRB()
 	for _, i := range is {
-		me.rb.AddInt(i)
+		rb.AddInt(i)
 	}
 }
 
 func (me *Bitmap) AddRange(begin, end int) {
-	me.lazyInit()
-	me.rb.AddRange(uint32(begin), uint32(end))
+	if begin >= end {
+		return
+	}
+	me.lazyRB().AddRange(uint32(begin), uint32(end))
 }
 
 func (me *Bitmap) Remove(i int) {
@@ -111,13 +108,18 @@ func (me *Iter) Stop() {}
 
 func Sub(left, right *Bitmap) *Bitmap {
 	return &Bitmap{
-		inited: true,
-		rb:     roaring.AndNot(left.lazyRB(), right.lazyRB()),
+		rb: roaring.AndNot(left.lazyRB(), right.lazyRB()),
 	}
 }
 
 func (me *Bitmap) Sub(other *Bitmap) {
-	me.lazyRB().AndNot(other.lazyRB())
+	if other.rb == nil {
+		return
+	}
+	if me.rb == nil {
+		return
+	}
+	me.rb.AndNot(other.rb)
 }
 
 func (me *Bitmap) Clear() {
