@@ -128,3 +128,15 @@ func (me *Bitmap) Clear() {
 	}
 	me.rb.Clear()
 }
+
+func (me Bitmap) Copy() (ret Bitmap) {
+	ret = me
+	if ret.rb != nil {
+		ret.rb = ret.rb.Clone()
+	}
+	return
+}
+
+func (me *Bitmap) FlipRange(begin, end int) {
+	me.lazyRB().FlipInt(begin, end)
+}
