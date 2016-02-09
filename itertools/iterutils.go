@@ -24,7 +24,7 @@ func (me seq) Len() int {
 }
 
 // Remove the nth value from the sequence.
-func (me *seq) Delete(index int) {
+func (me *seq) DeleteIndex(index int) {
 	me.i[index] = me.Index(me.Len() - 1)
 	me.i = me.i[:me.Len()-1]
 }
@@ -36,7 +36,7 @@ func ForPerm(n int, callback func(i int) (more bool)) bool {
 		if !callback(s.Index(r)) {
 			return false
 		}
-		s.Delete(r)
+		s.DeleteIndex(r)
 	}
 	return true
 }
