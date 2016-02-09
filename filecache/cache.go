@@ -131,6 +131,10 @@ var (
 	ErrIsDir   = errors.New("is directory")
 )
 
+func (me *Cache) StatFile(path string) (os.FileInfo, error) {
+	return os.Stat(me.realpath(sanitizePath(path)))
+}
+
 func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 	path = sanitizePath(path)
 	if path == "" {
