@@ -50,3 +50,10 @@ func TestSubUninited(t *testing.T) {
 	var left, right Bitmap
 	assert.EqualValues(t, []int(nil), Sub(&left, &right).ToSortedSlice())
 }
+
+func TestAddRange(t *testing.T) {
+	var bm Bitmap
+	bm.AddRange(21, 26)
+	bm.AddRange(9, 14)
+	bm.AddRange(11, 16)
+}
