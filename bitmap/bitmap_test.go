@@ -56,4 +56,12 @@ func TestAddRange(t *testing.T) {
 	bm.AddRange(21, 26)
 	bm.AddRange(9, 14)
 	bm.AddRange(11, 16)
+	bm.Remove(12)
+	assert.EqualValues(t, []int{9, 10, 11, 13, 14, 15, 21, 22, 23, 24, 25}, bm.ToSortedSlice())
+	bm.Clear()
+	bm.AddRange(3, 7)
+	bm.AddRange(0, 3)
+	bm.AddRange(2, 4)
+	bm.Remove(3)
+	assert.EqualValues(t, []int{0, 1, 2, 4, 5, 6}, bm.ToSortedSlice())
 }
