@@ -9,7 +9,7 @@ import (
 // Bitmaps store the existence of values in [0,math.MaxUint32] more
 // efficiently than []bool. The empty value starts with no bits set.
 type Bitmap struct {
-	rb *roaring.RoaringBitmap
+	rb *roaring.Bitmap
 }
 
 func (me *Bitmap) Len() int {
@@ -27,9 +27,9 @@ func (me Bitmap) ToSortedSlice() (ret []int) {
 	return
 }
 
-func (me *Bitmap) lazyRB() *roaring.RoaringBitmap {
+func (me *Bitmap) lazyRB() *roaring.Bitmap {
 	if me.rb == nil {
-		me.rb = roaring.NewRoaringBitmap()
+		me.rb = roaring.NewBitmap()
 	}
 	return me.rb
 }
