@@ -140,3 +140,17 @@ func (me Bitmap) Copy() (ret Bitmap) {
 func (me *Bitmap) FlipRange(begin, end int) {
 	me.lazyRB().FlipInt(begin, end)
 }
+
+func (me *Bitmap) Get(bit int) bool {
+	return me.rb != nil && me.rb.ContainsInt(bit)
+}
+
+func (me *Bitmap) Set(bit int, value bool) {
+	if value {
+		me.lazyRB().AddInt(bit)
+	} else {
+		if me.rb != nil {
+			me.rb.Remove(uint32(bit))
+		}
+	}
+}
