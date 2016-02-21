@@ -1,7 +1,6 @@
 package missinggo
 
 import (
-	"log"
 	"regexp"
 	"runtime"
 )
@@ -15,7 +14,6 @@ func GetTestName() string {
 	n := runtime.Callers(0, pc)
 	for i := 0; i < n; i++ {
 		name := runtime.FuncForPC(pc[i]).Name()
-		log.Println(name)
 		ms := testNameRegexp.FindStringSubmatch(name)
 		if ms == nil {
 			continue
