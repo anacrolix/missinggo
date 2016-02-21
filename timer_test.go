@@ -31,7 +31,8 @@ func TestTimerDrain(t *testing.T) {
 	<-tr.C
 }
 
-func TestTimerUnfortunatelyFiresAfterStop(t *testing.T) {
+func TestTimerDoesNotFireAfterStop(t *testing.T) {
+	t.Skip("the standard library implementation is broken")
 	fail := make(chan struct{})
 	done := make(chan struct{})
 	defer close(done)
@@ -58,9 +59,7 @@ func TestTimerUnfortunatelyFiresAfterStop(t *testing.T) {
 	}
 	select {
 	case <-fail:
-		t.Log("time.Timer is still broken")
-		return
+		t.FailNow()
 	case <-time.After(100 * time.Millisecond):
-		t.Fatal("time.Timer has been fixed!")
 	}
 }
