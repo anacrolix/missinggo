@@ -23,7 +23,11 @@ func CastSlice(slicePtr interface{}, fromSlice interface{}) {
 		return
 	}
 	// Deref the pointer to slice.
-	destSliceValue := reflect.ValueOf(slicePtr).Elem()
+	slicePtrValue := reflect.ValueOf(slicePtr)
+	if slicePtrValue.Kind() != reflect.Ptr {
+		panic("destination is not a pointer")
+	}
+	destSliceValue := slicePtrValue.Elem()
 	// The type of the elements of the destination slice.
 	destSliceElemType := destSliceValue.Type().Elem()
 	destSliceValue.Set(reflect.MakeSlice(destSliceValue.Type(), fromLen, fromLen))
