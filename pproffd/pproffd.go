@@ -47,7 +47,11 @@ func (me wrappedNetConn) Close() error {
 	return me.closeWrapper.Close()
 }
 
+// Tracks a net.Conn until Close() is explicitly called.
 func WrapNetConn(nc net.Conn) net.Conn {
+	if nc == nil {
+		return nil
+	}
 	return wrappedNetConn{
 		nc,
 		newCloseWrapper(nc),
