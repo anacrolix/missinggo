@@ -38,6 +38,7 @@ func RedirectedRequest(r *http.Request, newUrl string) (ret *http.Request, err e
 	}
 	ret = new(http.Request)
 	*ret = *r
+	ret.Header = nil
 	err = deepCopy(&ret.Header, r.Header)
 	if err != nil {
 		return
