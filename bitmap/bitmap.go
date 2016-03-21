@@ -15,6 +15,7 @@ type Bitmap struct {
 	rb *roaring.Bitmap
 }
 
+// The number of set bits in the bitmap. Also known as cardinality.
 func (me *Bitmap) Len() int {
 	if me.rb == nil {
 		return 0

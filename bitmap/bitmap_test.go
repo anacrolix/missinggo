@@ -30,12 +30,15 @@ func TestSimpleBitmap(t *testing.T) {
 	bm.Add(0)
 	assert.True(t, bm.Contains(0))
 	assert.False(t, bm.Contains(1))
+	assert.EqualValues(t, 1, bm.Len())
 	bm.Add(3)
 	assert.True(t, bm.Contains(0))
 	assert.True(t, bm.Contains(3))
 	assert.EqualValues(t, []int{0, 3}, bitmapSlice(bm))
+	assert.EqualValues(t, 2, bm.Len())
 	bm.Remove(0)
 	assert.EqualValues(t, []int{3}, bitmapSlice(bm))
+	assert.EqualValues(t, 1, bm.Len())
 }
 
 func TestSub(t *testing.T) {
@@ -58,10 +61,12 @@ func TestAddRange(t *testing.T) {
 	bm.AddRange(11, 16)
 	bm.Remove(12)
 	assert.EqualValues(t, []int{9, 10, 11, 13, 14, 15, 21, 22, 23, 24, 25}, bm.ToSortedSlice())
+	assert.EqualValues(t, 11, bm.Len())
 	bm.Clear()
 	bm.AddRange(3, 7)
 	bm.AddRange(0, 3)
 	bm.AddRange(2, 4)
 	bm.Remove(3)
 	assert.EqualValues(t, []int{0, 1, 2, 4, 5, 6}, bm.ToSortedSlice())
+	assert.EqualValues(t, 6, bm.Len())
 }
