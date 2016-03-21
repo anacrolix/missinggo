@@ -1,3 +1,6 @@
+// Package bitmap provides a []bool/bitmap implementation with standardized
+// iteration. Bitmaps are the equivalent of []bool, with improved compression
+// for runs of similar values, and faster operations on ranges and the like.
 package bitmap
 
 import (
