@@ -154,3 +154,11 @@ func (me *Bitmap) Set(bit int, value bool) {
 		}
 	}
 }
+
+func (me *Bitmap) RemoveRange(begin, end int) *Bitmap {
+	if me.rb == nil {
+		return me
+	}
+	me.rb.RemoveRange(uint32(begin), uint32(end))
+	return me
+}
