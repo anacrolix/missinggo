@@ -1,6 +1,7 @@
 package bitmap
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -69,4 +70,24 @@ func TestAddRange(t *testing.T) {
 	bm.Remove(3)
 	assert.EqualValues(t, []int{0, 1, 2, 4, 5, 6}, bm.ToSortedSlice())
 	assert.EqualValues(t, 6, bm.Len())
+}
+
+func TestRemoveRange(t *testing.T) {
+	var bm Bitmap
+	bm.AddRange(3, 12)
+	assert.EqualValues(t, 9, bm.Len())
+	bm.RemoveRange(14, -1)
+	assert.EqualValues(t, 9, bm.Len())
+	bm.RemoveRange(2, 5)
+	assert.EqualValues(t, 7, bm.Len())
+	bm.RemoveRange(10, -1)
+	assert.EqualValues(t, 5, bm.Len())
+}
+
+func TestLimits(t *testing.T) {
+	var bm Bitmap
+	assert.Panics(t, func() { bm.Add(math.MaxInt64) })
+	bm.Add(-1)
+	assert.EqualValues(t, 1, bm.Len())
+	assert.EqualValues(t, []int{MaxInt}, bm.ToSortedSlice())
 }

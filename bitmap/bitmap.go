@@ -4,10 +4,14 @@
 package bitmap
 
 import (
+	"math"
+
 	"github.com/RoaringBitmap/roaring"
 
 	"github.com/anacrolix/missinggo"
 )
+
+const MaxInt = math.MaxUint32
 
 // Bitmaps store the existence of values in [0,math.MaxUint32] more
 // efficiently than []bool. The empty value starts with no bits set.
@@ -57,9 +61,16 @@ func (me Bitmap) IterTyped(f func(int) bool) bool {
 	return true
 }
 
+func checkInt(i int) {
+	if i < -1 || i > MaxInt {
+		panic("out of bounds")
+	}
+}
+
 func (me *Bitmap) Add(is ...int) {
 	rb := me.lazyRB()
 	for _, i := range is {
+		checkInt(i)
 		rb.AddInt(i)
 	}
 }
