@@ -17,11 +17,11 @@ var (
 )
 
 type PriorityBitmap struct {
+	// Protects against unsychronized modifications to bitsets and
+	mu sync.Mutex
 	om orderedmap.OrderedMap
 	// From bit index to priority
 	priorities map[int]int
-	// Protects modification to bits in a priority slot.
-	mu sync.RWMutex
 }
 
 func (me *PriorityBitmap) Clear() {
@@ -34,8 +34,6 @@ func (me *PriorityBitmap) deleteBit(bit int) {
 	if !ok {
 		return
 	}
-	me.mu.Lock()
-	defer me.mu.Unlock()
 	switch v := me.om.Get(p).(type) {
 	case int:
 	case map[int]struct{}:
@@ -88,6 +86,8 @@ func (me *PriorityBitmap) Set(bit int, priority int) {
 }
 
 func (me *PriorityBitmap) Remove(bit int) {
+	me.mu.Lock()
+	defer me.mu.Unlock()
 	me.deleteBit(bit)
 	delete(me.priorities, bit)
 	if len(me.priorities) == 0 {
@@ -104,9 +104,16 @@ func (me *PriorityBitmap) Iter(f func(value interface{}) bool) {
 	})
 }
 
-func (me *PriorityBitmap) IterTyped(f func(i int) bool) {
+func (me *PriorityBitmap) IterTyped(_f func(i int) bool) {
+	me.mu.Lock()
+	defer me.mu.Unlock()
 	if me == nil || me.om == nil {
 		return
+	}
+	f := func(i int) bool {
+		me.mu.Unlock()
+		defer me.mu.Lock()
+		return _f(i)
 	}
 	me.om.Iter(func(value interface{}) bool {
 		switch v := value.(type) {
