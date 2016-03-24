@@ -21,6 +21,17 @@ func (me *Event) C() <-chan struct{} {
 	return me.ch
 }
 
+func (me *Event) Clear() {
+	me.mu.Lock()
+	defer me.mu.Unlock()
+	me.lazyInit()
+	if !me.closed {
+		return
+	}
+	me.ch = make(chan struct{})
+	me.closed = false
+}
+
 func (me *Event) Set() (first bool) {
 	me.mu.Lock()
 	defer me.mu.Unlock()
