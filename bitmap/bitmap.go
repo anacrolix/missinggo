@@ -7,11 +7,9 @@ import (
 	"math"
 
 	"github.com/RoaringBitmap/roaring"
-
-	"github.com/anacrolix/missinggo"
 )
 
-const MaxInt = math.MaxUint32
+const MaxInt = -1
 
 // Bitmaps store the existence of values in [0,math.MaxUint32] more
 // efficiently than []bool. The empty value starts with no bits set.
@@ -31,7 +29,9 @@ func (me Bitmap) ToSortedSlice() (ret []int) {
 	if me.rb == nil {
 		return
 	}
-	missinggo.CastSlice(&ret, me.rb.ToArray())
+	for _, ui32 := range me.rb.ToArray() {
+		ret = append(ret, int(int32(ui32)))
+	}
 	return
 }
 
@@ -62,7 +62,7 @@ func (me Bitmap) IterTyped(f func(int) bool) bool {
 }
 
 func checkInt(i int) {
-	if i < -1 || i > MaxInt {
+	if i < math.MinInt32 || i > math.MaxInt32 {
 		panic("out of bounds")
 	}
 }
