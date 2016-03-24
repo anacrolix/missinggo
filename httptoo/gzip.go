@@ -13,6 +13,8 @@ type gzipResponseWriter struct {
 	haveWritten bool
 }
 
+var _ http.ResponseWriter = &gzipResponseWriter{}
+
 func (w *gzipResponseWriter) Write(b []byte) (int, error) {
 	if w.haveWritten {
 		goto write
