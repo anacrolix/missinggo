@@ -301,3 +301,7 @@ func (me *Cache) Rename(from, to string) (err error) {
 func (me *Cache) Stat(path string) (os.FileInfo, error) {
 	return os.Stat(me.realpath(path))
 }
+
+func (me *Cache) AsFileStore() missinggo.FileStore {
+	return fileStore{me}
+}
