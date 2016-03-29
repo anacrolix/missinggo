@@ -84,6 +84,22 @@ func (me *File) Write(b []byte) (n int, err error) {
 	return
 }
 
+func (me *File) WriteAt(b []byte, off int64) (n int, err error) {
+	err = me.goneErr()
+	if err != nil {
+		return
+	}
+	n, err = me.f.WriteAt(b, off)
+	me.c.mu.Lock()
+	me.c.statItem(me.path, time.Now())
+	me.c.trimToCapacity()
+	me.c.mu.Unlock()
+	if err == nil {
+		err = me.goneErr()
+	}
+	return
+}
+
 func (me *File) Close() error {
 	return me.f.Close()
 }

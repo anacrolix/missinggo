@@ -65,6 +65,7 @@ type OSFile interface {
 	io.Writer
 	Stat() (os.FileInfo, error)
 	io.ReaderAt
+	io.WriterAt
 }
 
 type wrappedOSFile struct {
