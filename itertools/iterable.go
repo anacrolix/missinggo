@@ -22,6 +22,7 @@ func NewIterator(it Iterable) (ret *iterator) {
 		ch: make(chan interface{}),
 	}
 	go func() {
+		// Have to do this in a goroutine, because the interface is synchronous.
 		it.Iter(func(value interface{}) bool {
 			select {
 			case ret.ch <- value:

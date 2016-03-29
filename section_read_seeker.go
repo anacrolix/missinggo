@@ -11,6 +11,7 @@ type sectionReadSeeker struct {
 	off, size int64
 }
 
+// Returns a ReadSeeker on a section of another ReadSeeker.
 func NewSectionReadSeeker(base io.ReadSeeker, off, size int64) (ret io.ReadSeeker) {
 	ret = &sectionReadSeeker{
 		base: base,
