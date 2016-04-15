@@ -66,10 +66,7 @@ func (me *Cache) SetCapacity(capacity int64) {
 }
 
 func NewCache(root string) (ret *Cache, err error) {
-	if !filepath.IsAbs(root) {
-		err = errors.New("root is not an absolute filepath")
-		return
-	}
+	root, err = filepath.Abs(root)
 	ret = &Cache{
 		root:     root,
 		capacity: -1, // unlimited
