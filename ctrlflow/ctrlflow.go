@@ -1,7 +1,15 @@
 package ctrlflow
 
+import (
+	"fmt"
+)
+
 type valueWrapper struct {
 	value interface{}
+}
+
+func (me valueWrapper) String() string {
+	return fmt.Sprint(me.value)
 }
 
 func Panic(val interface{}) {
