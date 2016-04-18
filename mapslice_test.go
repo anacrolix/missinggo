@@ -7,16 +7,9 @@ import (
 )
 
 func TestMapSlice(t *testing.T) {
-	type kv struct {
-		Key   string
-		Value int
-	}
 	sl := MapAsSlice(map[string]int{"two": 2, "one": 1})
 	assert.Len(t, sl, 2)
-	assert.EqualValues(t, []struct {
-		Key   string
-		Value int
-	}{{"one", 1}, {"two", 2}}, Sort(sl, func(left, right kv) bool {
-		return left.Key < right.Key
+	assert.EqualValues(t, []MapKeyValue{{"one", 1}, {"two", 2}}, Sort(sl, func(left, right MapKeyValue) bool {
+		return left.Key.(string) < right.Key.(string)
 	}))
 }
