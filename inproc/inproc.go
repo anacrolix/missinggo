@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"strconv"
 	"sync"
@@ -167,7 +168,7 @@ func (me *packetConn) SetWriteDeadline(t time.Time) error {
 
 func newCondDeadline(cond *sync.Cond) (ret *condDeadline) {
 	ret = &condDeadline{
-		timer: time.AfterFunc(0, func() {
+		timer: time.AfterFunc(math.MaxInt64, func() {
 			mu.Lock()
 			ret._exceeded = true
 			mu.Unlock()
