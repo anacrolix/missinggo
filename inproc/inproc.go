@@ -40,29 +40,35 @@ func getPort() (port int) {
 	return
 }
 
-func resolve(str string) (addr addr) {
-	if str != "" {
-		h, p, err := net.SplitHostPort(str)
-		if err != nil {
-			panic(err)
-		}
-		if h != "localhost" && h != "" {
-			panic(h)
-		}
-		i64, err := strconv.ParseInt(p, 10, 0)
-		if err != nil {
-			panic(err)
-		}
-		addr.Port = int(i64)
+func ResolveAddr(network, str string) (net.Addr, error) {
+	return ResolveInprocAddr(network, str)
+}
+
+func ResolveInprocAddr(network, str string) (addr addr, err error) {
+	if str == "" {
+		addr.Port = getPort()
+		return
 	}
+	_, p, err := net.SplitHostPort(str)
+	if err != nil {
+		return
+	}
+	i64, err := strconv.ParseInt(p, 10, 0)
+	if err != nil {
+		return
+	}
+	addr.Port = int(i64)
 	if addr.Port == 0 {
 		addr.Port = getPort()
 	}
 	return
 }
 
-func ListenPacket(network, address string) (nc net.PacketConn, err error) {
-	addr := resolve(address)
+func ListenPacket(network, addrStr string) (nc net.PacketConn, err error) {
+	addr, err := ResolveInprocAddr(network, addrStr)
+	if err != nil {
+		return
+	}
 	mu.Lock()
 	defer mu.Unlock()
 	if _, ok := conns[addr.Port]; ok {
