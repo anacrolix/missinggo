@@ -29,7 +29,7 @@ func (addr) Network() string {
 }
 
 func (me addr) String() string {
-	return fmt.Sprintf("127.0.0.1:%d", me.Port)
+	return fmt.Sprintf(":%d", me.Port)
 }
 
 func getPort() (port int) {
