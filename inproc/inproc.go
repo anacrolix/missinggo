@@ -114,13 +114,17 @@ func (me *packetConn) LocalAddr() net.Addr {
 var errTimeout = errors.New("i/o timeout")
 
 func (me *packetConn) WriteTo(b []byte, na net.Addr) (n int, err error) {
-	n = len(b)
 	mu.Lock()
 	defer mu.Unlock()
+	if me.closed {
+		err = errors.New("closed")
+		return
+	}
 	if me.writeDeadline.exceeded() {
 		err = errTimeout
 		return
 	}
+	n = len(b)
 	port := missinggo.AddrPort(na)
 	c, ok := conns[port]
 	if !ok {
