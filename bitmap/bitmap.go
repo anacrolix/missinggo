@@ -79,7 +79,7 @@ func (me *Bitmap) AddRange(begin, end int) {
 	if begin >= end {
 		return
 	}
-	me.lazyRB().AddRange(uint32(begin), uint32(end))
+	me.lazyRB().AddRange(uint64(begin), uint64(end))
 }
 
 func (me *Bitmap) Remove(i int) {
@@ -174,6 +174,6 @@ func (me *Bitmap) RemoveRange(begin, end int) *Bitmap {
 	if me.rb == nil {
 		return me
 	}
-	me.rb.RemoveRange(uint32(begin), uint32(end))
+	me.rb.RemoveRange(uint64(begin), uint64(end))
 	return me
 }
