@@ -16,9 +16,10 @@ func (me *Event) lazyInit() {
 
 func (me *Event) C() <-chan struct{} {
 	me.mu.Lock()
-	defer me.mu.Unlock()
 	me.lazyInit()
-	return me.ch
+	ch := me.ch
+	me.mu.Unlock()
+	return ch
 }
 
 func (me *Event) Clear() {
@@ -46,9 +47,10 @@ func (me *Event) Set() (first bool) {
 
 func (me *Event) IsSet() bool {
 	me.mu.Lock()
-	defer me.mu.Unlock()
+	ch := me.ch
+	me.mu.Unlock()
 	select {
-	case <-me.ch:
+	case <-ch:
 		return true
 	default:
 		return false
