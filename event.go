@@ -2,6 +2,8 @@ package missinggo
 
 import "sync"
 
+// Events are threadsafe boolean flags that provide a channel that's closed
+// when its true.
 type Event struct {
 	mu     sync.Mutex
 	ch     chan struct{}

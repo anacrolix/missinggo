@@ -1,8 +1,6 @@
 package missinggo
 
-import (
-	"sync"
-)
+import "sync"
 
 // Flag represents a boolean value, that signals sync.Cond's when it changes.
 // It's not concurrent safe by intention.
