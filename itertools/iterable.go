@@ -1,6 +1,8 @@
 package itertools
 
 import (
+	"sync"
+
 	"github.com/anacrolix/missinggo"
 )
 
@@ -13,6 +15,7 @@ type iterator struct {
 	ch      chan interface{}
 	value   interface{}
 	ok      bool
+	mu      sync.Mutex
 	stopped missinggo.Event
 }
 
@@ -27,12 +30,14 @@ func NewIterator(it Iterable) (ret *iterator) {
 			select {
 			case ret.ch <- value:
 				return true
-			case <-ret.stopped.C():
+			case <-ret.stopped.LockedChan(&ret.mu):
 				return false
 			}
 		})
 		close(ret.ch)
+		ret.mu.Lock()
 		ret.stopped.Set()
+		ret.mu.Unlock()
 	}()
 	return
 }
@@ -50,7 +55,9 @@ func (me *iterator) Next() bool {
 }
 
 func (me *iterator) Stop() {
+	me.mu.Lock()
 	me.stopped.Set()
+	me.mu.Unlock()
 }
 
 func IterableAsSlice(it Iterable) (ret []interface{}) {
