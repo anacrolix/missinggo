@@ -1,4 +1,4 @@
-package uniform
+package resource
 
 import (
 	"bytes"
@@ -12,14 +12,15 @@ import (
 	"time"
 )
 
+// Provides access to resources through a http.Client.
 type HTTPProvider struct {
 	Client *http.Client
 }
 
 var _ Provider = &HTTPProvider{}
 
-func (me *HTTPProvider) NewResource(urlStr string) (r Resource, err error) {
-	_r := new(HTTPResource)
+func (me *HTTPProvider) NewInstance(urlStr string) (r Instance, err error) {
+	_r := new(httpInstance)
 	_r.URL, err = url.Parse(urlStr)
 	if err != nil {
 		return
@@ -32,12 +33,12 @@ func (me *HTTPProvider) NewResource(urlStr string) (r Resource, err error) {
 	return
 }
 
-type HTTPResource struct {
+type httpInstance struct {
 	Client *http.Client
 	URL    *url.URL
 }
 
-var _ Resource = &HTTPResource{}
+var _ Instance = &httpInstance{}
 
 func mustNewRequest(method, urlStr string, body io.Reader) *http.Request {
 	req, err := http.NewRequest(method, urlStr, body)
@@ -54,7 +55,7 @@ func responseError(r *http.Response) error {
 	return errors.New(r.Status)
 }
 
-func (me *HTTPResource) Get() (ret io.ReadCloser, err error) {
+func (me *httpInstance) Get() (ret io.ReadCloser, err error) {
 	resp, err := me.Client.Get(me.URL.String())
 	if err != nil {
 		return
@@ -68,7 +69,7 @@ func (me *HTTPResource) Get() (ret io.ReadCloser, err error) {
 	return
 }
 
-func (me *HTTPResource) Put(r io.Reader) (err error) {
+func (me *httpInstance) Put(r io.Reader) (err error) {
 	resp, err := me.Client.Do(mustNewRequest("PUT", me.URL.String(), r))
 	if err != nil {
 		return
@@ -81,7 +82,7 @@ func (me *HTTPResource) Put(r io.Reader) (err error) {
 	return
 }
 
-func (me *HTTPResource) ReadAt(b []byte, off int64) (n int, err error) {
+func (me *httpInstance) ReadAt(b []byte, off int64) (n int, err error) {
 	req := mustNewRequest("GET", me.URL.String(), nil)
 	req.Header.Set("Range", fmt.Sprintf("bytes=%d-%d", off, off+int64(len(b))-1))
 	resp, err := me.Client.Do(req)
@@ -99,7 +100,7 @@ func (me *HTTPResource) ReadAt(b []byte, off int64) (n int, err error) {
 	return io.ReadFull(resp.Body, b)
 }
 
-func (me *HTTPResource) WriteAt(b []byte, off int64) (n int, err error) {
+func (me *httpInstance) WriteAt(b []byte, off int64) (n int, err error) {
 	req := mustNewRequest("PATCH", me.URL.String(), bytes.NewReader(b))
 	req.ContentLength = int64(len(b))
 	req.Header.Set("Content-Range", fmt.Sprintf("bytes=%d-%d", off, off+int64(len(b))-1))
@@ -115,7 +116,7 @@ func (me *HTTPResource) WriteAt(b []byte, off int64) (n int, err error) {
 	return
 }
 
-func (me *HTTPResource) Stat() (fi os.FileInfo, err error) {
+func (me *httpInstance) Stat() (fi os.FileInfo, err error) {
 	resp, err := me.Client.Head(me.URL.String())
 	if err != nil {
 		return
@@ -148,7 +149,7 @@ func (me *HTTPResource) Stat() (fi os.FileInfo, err error) {
 	return
 }
 
-func (me *HTTPResource) Delete() (err error) {
+func (me *httpInstance) Delete() (err error) {
 	resp, err := me.Client.Do(mustNewRequest("DELETE", me.URL.String(), nil))
 	if err != nil {
 		return

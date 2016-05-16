@@ -1,11 +1,13 @@
-package uniform
+package resource
 
 import (
 	"io"
 	"os"
 )
 
-type Resource interface {
+// An Instance represents the content at some location accessed through some
+// Provider. It's the data at some URL.
+type Instance interface {
 	Get() (io.ReadCloser, error)
 	Put(io.Reader) error
 	Stat() (os.FileInfo, error)
@@ -14,7 +16,8 @@ type Resource interface {
 	Delete() error
 }
 
-func ResourceReadSeeker(r Resource) io.ReadSeeker {
+// Creates a io.ReadSeeker to an Instance.
+func ReadSeeker(r Instance) io.ReadSeeker {
 	fi, err := r.Stat()
 	if err != nil {
 		return nil
@@ -22,7 +25,8 @@ func ResourceReadSeeker(r Resource) io.ReadSeeker {
 	return io.NewSectionReader(r, 0, fi.Size())
 }
 
-func Move(from, to Resource) (err error) {
+// Move instance content, deleting the source if it succeeds.
+func Move(from, to Instance) (err error) {
 	r, err := from.Get()
 	if err != nil {
 		return

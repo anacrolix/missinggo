@@ -11,9 +11,9 @@ type uniformResourceProvider struct {
 	*Cache
 }
 
-var _ uniform.Provider = &uniformResourceProvider{}
+var _ resource.Provider = &uniformResourceProvider{}
 
-func (me *uniformResourceProvider) NewResource(loc string) (uniform.Resource, error) {
+func (me *uniformResourceProvider) NewInstance(loc string) (resource.Instance, error) {
 	return &uniformResource{me.Cache, loc}, nil
 }
 

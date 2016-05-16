@@ -304,6 +304,6 @@ func (me *Cache) AsFileStore() missinggo.FileStore {
 	return fileStore{me}
 }
 
-func (me *Cache) AsResourceProvider() uniform.Provider {
+func (me *Cache) AsResourceProvider() resource.Provider {
 	return &uniformResourceProvider{me}
 }

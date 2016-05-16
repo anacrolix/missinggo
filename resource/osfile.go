@@ -1,29 +1,30 @@
-package uniform
+package resource
 
 import (
 	"io"
 	"os"
 )
 
+// Provides access to resources through the native OS filesystem.
 type OSFileProvider struct{}
 
 var _ Provider = &OSFileProvider{}
 
-func (me *OSFileProvider) NewResource(filePath string) (r Resource, err error) {
-	return &OSFileResource{filePath}, nil
+func (me *OSFileProvider) NewInstance(filePath string) (r Instance, err error) {
+	return &osFileInstance{filePath}, nil
 }
 
-type OSFileResource struct {
+type osFileInstance struct {
 	path string
 }
 
-var _ Resource = &OSFileResource{}
+var _ Instance = &osFileInstance{}
 
-func (me *OSFileResource) Get() (ret io.ReadCloser, err error) {
+func (me *osFileInstance) Get() (ret io.ReadCloser, err error) {
 	return os.Open(me.path)
 }
 
-func (me *OSFileResource) Put(r io.Reader) (err error) {
+func (me *osFileInstance) Put(r io.Reader) (err error) {
 	f, err := os.OpenFile(me.path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0640)
 	if err != nil {
 		return
@@ -33,7 +34,7 @@ func (me *OSFileResource) Put(r io.Reader) (err error) {
 	return
 }
 
-func (me *OSFileResource) ReadAt(b []byte, off int64) (n int, err error) {
+func (me *osFileInstance) ReadAt(b []byte, off int64) (n int, err error) {
 	f, err := os.Open(me.path)
 	if err != nil {
 		return
@@ -42,7 +43,7 @@ func (me *OSFileResource) ReadAt(b []byte, off int64) (n int, err error) {
 	return f.ReadAt(b, off)
 }
 
-func (me *OSFileResource) WriteAt(b []byte, off int64) (n int, err error) {
+func (me *osFileInstance) WriteAt(b []byte, off int64) (n int, err error) {
 	f, err := os.OpenFile(me.path, os.O_CREATE|os.O_WRONLY, 0640)
 	if err != nil {
 		return
@@ -51,10 +52,10 @@ func (me *OSFileResource) WriteAt(b []byte, off int64) (n int, err error) {
 	return f.WriteAt(b, off)
 }
 
-func (me *OSFileResource) Stat() (fi os.FileInfo, err error) {
+func (me *osFileInstance) Stat() (fi os.FileInfo, err error) {
 	return os.Stat(me.path)
 }
 
-func (me *OSFileResource) Delete() error {
+func (me *osFileInstance) Delete() error {
 	return os.Remove(me.path)
 }
