@@ -11,7 +11,7 @@ import (
 
 	"github.com/anacrolix/missinggo"
 	"github.com/anacrolix/missinggo/pproffd"
-	"github.com/anacrolix/missinggo/uniform"
+	"github.com/anacrolix/missinggo/resource"
 )
 
 const (

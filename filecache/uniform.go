@@ -4,7 +4,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/anacrolix/missinggo/uniform"
+	"github.com/anacrolix/missinggo/resource"
 )
 
 type uniformResourceProvider struct {
