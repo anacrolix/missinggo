@@ -96,6 +96,7 @@ func main() {
 			firstByte := parseContentRangeFirstByte(contentRange)
 			log.Printf("%s (%d-) %s", r.Method, firstByte, r.RequestURI)
 			handleNewData(w, p, firstByte, r.Body)
+			return
 		}
 		log.Printf("%s %s %s", r.Method, r.Header.Get("Range"), r.RequestURI)
 		f, err := c.OpenFile(p, os.O_RDONLY)
