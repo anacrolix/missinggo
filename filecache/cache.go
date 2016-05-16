@@ -11,6 +11,7 @@ import (
 
 	"github.com/anacrolix/missinggo"
 	"github.com/anacrolix/missinggo/pproffd"
+	"github.com/anacrolix/missinggo/uniform"
 )
 
 const (
@@ -301,4 +302,8 @@ func (me *Cache) Stat(path string) (os.FileInfo, error) {
 
 func (me *Cache) AsFileStore() missinggo.FileStore {
 	return fileStore{me}
+}
+
+func (me *Cache) AsResourceProvider() uniform.Provider {
+	return &uniformResourceProvider{me}
 }
