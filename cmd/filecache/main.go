@@ -11,10 +11,11 @@ import (
 	"strconv"
 
 	_ "github.com/anacrolix/envpprof"
-	"github.com/anacrolix/missinggo"
-	"github.com/anacrolix/missinggo/filecache"
 	"github.com/anacrolix/tagflag"
 	"github.com/dustin/go-humanize"
+
+	"github.com/anacrolix/missinggo"
+	"github.com/anacrolix/missinggo/filecache"
 )
 
 var c *filecache.Cache
@@ -94,14 +95,7 @@ func main() {
 			contentRange := r.Header.Get("Content-Range")
 			firstByte := parseContentRangeFirstByte(contentRange)
 			log.Printf("%s (%d-) %s", r.Method, firstByte, r.RequestURI)
-			if handleNewData(w, p, firstByte, r.Body) {
-				return
-			}
-			if contentRange != "" {
-				w.WriteHeader(206)
-				return
-			}
-			return
+			handleNewData(w, p, firstByte, r.Body)
 		}
 		log.Printf("%s %s %s", r.Method, r.Header.Get("Range"), r.RequestURI)
 		f, err := c.OpenFile(p, os.O_RDONLY)
