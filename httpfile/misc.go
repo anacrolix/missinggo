@@ -13,22 +13,21 @@ var (
 	ErrNotFound = os.ErrNotExist
 )
 
-// Returns -1 length if it can't determined.
-func instanceLength(r *http.Response) (int64, error) {
+// ok is false if the response just doesn't specify anything we handle.
+func instanceLength(r *http.Response) (l int64, err error) {
 	switch r.StatusCode {
 	case http.StatusOK:
-		if h := r.Header.Get("Content-Length"); h != "" {
-			return strconv.ParseInt(h, 10, 64)
-		} else {
-			return -1, nil
-		}
+		l, err = strconv.ParseInt(r.Header.Get("Content-Length"), 10, 64)
+		return
 	case http.StatusPartialContent:
-		cr, ok := missinggo.ParseHTTPBytesContentRange(r.Header.Get("Content-Range"))
-		if !ok {
-			return -1, errors.New("bad 206 response")
+		cr, parseOk := missinggo.ParseHTTPBytesContentRange(r.Header.Get("Content-Range"))
+		l = cr.Length
+		if !parseOk {
+			err = errors.New("error parsing Content-Range")
 		}
-		return cr.Length, nil
+		return
 	default:
-		return -1, errors.New(r.Status)
+		err = errors.New("unhandled status code")
+		return
 	}
 }
