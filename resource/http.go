@@ -65,7 +65,7 @@ func (me *httpInstance) Get() (ret io.ReadCloser, err error) {
 		return
 	}
 	resp.Body.Close()
-	err = errors.New(resp.Status)
+	err = responseError(resp)
 	return
 }
 
