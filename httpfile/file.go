@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/anacrolix/missinggo"
+	"github.com/anacrolix/missinggo/httptoo"
 )
 
 type File struct {
@@ -58,7 +59,7 @@ func (me *File) prepareReader() (err error) {
 	}
 	switch resp.StatusCode {
 	case http.StatusPartialContent:
-		cr, ok := missinggo.ParseHTTPBytesContentRange(resp.Header.Get("Content-Range"))
+		cr, ok := httptoo.ParseBytesContentRange(resp.Header.Get("Content-Range"))
 		if !ok || cr.First != me.off {
 			err = errors.New("bad response")
 			resp.Body.Close()

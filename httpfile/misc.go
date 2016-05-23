@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/anacrolix/missinggo"
+	"github.com/anacrolix/missinggo/httptoo"
 )
 
 var (
@@ -20,7 +20,7 @@ func instanceLength(r *http.Response) (l int64, err error) {
 		l, err = strconv.ParseInt(r.Header.Get("Content-Length"), 10, 64)
 		return
 	case http.StatusPartialContent:
-		cr, parseOk := missinggo.ParseHTTPBytesContentRange(r.Header.Get("Content-Range"))
+		cr, parseOk := httptoo.ParseBytesContentRange(r.Header.Get("Content-Range"))
 		l = cr.Length
 		if !parseOk {
 			err = errors.New("error parsing Content-Range")
