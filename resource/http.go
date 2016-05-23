@@ -90,7 +90,12 @@ func (me *httpInstance) ReadAt(b []byte, off int64) (n int, err error) {
 		return
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusPartialContent {
+	switch resp.StatusCode {
+	case http.StatusPartialContent:
+	case http.StatusRequestedRangeNotSatisfiable:
+		err = io.EOF
+		return
+	default:
 		err = responseError(resp)
 		return
 	}
