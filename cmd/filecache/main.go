@@ -113,6 +113,7 @@ func main() {
 			go f.Close()
 		}()
 		info, _ := f.Stat()
+		w.Header().Set("Content-Range", fmt.Sprintf("*/%d", info.Size()))
 		http.ServeContent(w, r, p, info.ModTime(), f)
 	})
 	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
