@@ -27,11 +27,12 @@ func ReadSeeker(r Instance) io.ReadSeeker {
 
 // Move instance content, deleting the source if it succeeds.
 func Move(from, to Instance) (err error) {
-	r, err := from.Get()
+	rc, err := from.Get()
 	if err != nil {
 		return
 	}
-	err = to.Put(r)
+	defer rc.Close()
+	err = to.Put(rc)
 	if err != nil {
 		return
 	}
