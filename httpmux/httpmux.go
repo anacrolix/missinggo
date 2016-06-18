@@ -1,12 +1,13 @@
 package httpmux
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"path"
 	"regexp"
 	"strings"
+
+	"golang.org/x/net/context"
 )
 
 var pathParamContextKey = &struct{}{}
