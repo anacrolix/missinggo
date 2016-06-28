@@ -12,7 +12,16 @@ type SingleFlight struct {
 	ongoing map[string]*ongoing
 }
 
-func (me *SingleFlight) Lock(id string) {
+type Operation struct {
+	sf *SingleFlight
+	id string
+}
+
+func (op Operation) Unlock() {
+	op.sf.Unlock(op.id)
+}
+
+func (me *SingleFlight) Lock(id string) Operation {
 	me.mu.Lock()
 	on, ok := me.ongoing[id]
 	if !ok {
@@ -25,6 +34,7 @@ func (me *SingleFlight) Lock(id string) {
 	on.users++
 	me.mu.Unlock()
 	on.do.Lock()
+	return Operation{me, id}
 }
 
 func (me *SingleFlight) Unlock(id string) {
