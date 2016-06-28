@@ -3,14 +3,16 @@ package httptoo
 import (
 	"io"
 	"net/http"
+	"sync"
 
 	"github.com/anacrolix/missinggo"
 )
 
 type responseWriter struct {
+	mu            sync.Mutex
 	r             http.Response
 	headerWritten missinggo.Event
-	bodyWriter    io.Writer
+	bodyWriter    io.WriteCloser
 }
 
 func (me *responseWriter) Header() http.Header {
@@ -21,24 +23,38 @@ func (me *responseWriter) Header() http.Header {
 }
 
 func (me *responseWriter) Write(b []byte) (int, error) {
+	me.mu.Lock()
 	if !me.headerWritten.IsSet() {
-		me.WriteHeader(200)
+		me.writeHeader(200)
 	}
+	me.mu.Unlock()
 	return me.bodyWriter.Write(b)
 }
 
 func (me *responseWriter) WriteHeader(status int) {
+	me.mu.Lock()
+	me.writeHeader(status)
+	me.mu.Unlock()
+}
+
+func (me *responseWriter) writeHeader(status int) {
 	if me.headerWritten.IsSet() {
 		return
 	}
 	me.r.StatusCode = status
-	me.r.Body, me.bodyWriter = io.Pipe()
 	me.headerWritten.Set()
+}
+
+func (me *responseWriter) runHandler(h http.Handler, req *http.Request) {
+	me.r.Body, me.bodyWriter = io.Pipe()
+	defer me.bodyWriter.Close()
+	defer me.WriteHeader(200)
+	h.ServeHTTP(me, req)
 }
 
 func RoundTripHandler(req *http.Request, h http.Handler) (*http.Response, error) {
 	rw := responseWriter{}
-	go h.ServeHTTP(&rw, req)
-	rw.headerWritten.Wait()
+	go rw.runHandler(h, req)
+	<-rw.headerWritten.LockedChan(&rw.mu)
 	return &rw.r, nil
 }
