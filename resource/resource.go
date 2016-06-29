@@ -39,3 +39,8 @@ func Move(from, to Instance) (err error) {
 	from.Delete()
 	return
 }
+
+func Exists(i Instance) bool {
+	_, err := i.Stat()
+	return err == nil
+}
