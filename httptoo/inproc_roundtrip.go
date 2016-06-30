@@ -58,3 +58,11 @@ func RoundTripHandler(req *http.Request, h http.Handler) (*http.Response, error)
 	<-rw.headerWritten.LockedChan(&rw.mu)
 	return &rw.r, nil
 }
+
+type InProcRoundTripper struct {
+	Handler http.Handler
+}
+
+func (me *InProcRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	return RoundTripHandler(req, me.Handler)
+}
