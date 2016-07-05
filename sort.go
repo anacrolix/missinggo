@@ -1,6 +1,7 @@
 package missinggo
 
 import (
+	"container/heap"
 	"reflect"
 	"sort"
 )
@@ -28,6 +29,16 @@ func (s *sorter) Swap(i, j int) {
 	s.sl.Index(j).Set(t)
 }
 
+func (s *sorter) Pop() interface{} {
+	ret := s.sl.Index(s.sl.Len() - 1).Interface()
+	s.sl.SetLen(s.sl.Len() - 1)
+	return ret
+}
+
+func (s *sorter) Push(val interface{}) {
+	s.sl = reflect.Append(s.sl, reflect.ValueOf(val))
+}
+
 func Sort(sl interface{}, less interface{}) interface{} {
 	sorter := sorter{
 		sl:   reflect.ValueOf(sl),
@@ -35,4 +46,20 @@ func Sort(sl interface{}, less interface{}) interface{} {
 	}
 	sort.Sort(&sorter)
 	return sorter.sl.Interface()
+}
+
+func addressableSlice(slice interface{}) reflect.Value {
+	v := reflect.ValueOf(slice)
+	p := reflect.New(v.Type())
+	p.Elem().Set(v)
+	return p.Elem()
+}
+
+func HeapFromSlice(sl interface{}, less interface{}) heap.Interface {
+	ret := &sorter{
+		sl:   addressableSlice(sl),
+		less: reflect.ValueOf(less),
+	}
+	heap.Init(ret)
+	return ret
 }
