@@ -39,13 +39,12 @@ func (s *sorter) Push(val interface{}) {
 	s.sl = reflect.Append(s.sl, reflect.ValueOf(val))
 }
 
-func Sort(sl interface{}, less interface{}) interface{} {
+func SortSlice(sl interface{}, less interface{}) {
 	sorter := sorter{
 		sl:   reflect.ValueOf(sl),
 		less: reflect.ValueOf(less),
 	}
 	sort.Sort(&sorter)
-	return sorter.sl.Interface()
 }
 
 func addressableSlice(slice interface{}) reflect.Value {
