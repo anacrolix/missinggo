@@ -8,9 +8,9 @@ import (
 // Provides access to resources through the native OS filesystem.
 type OSFileProvider struct{}
 
-var _ Provider = &OSFileProvider{}
+var _ Provider = OSFileProvider{}
 
-func (me *OSFileProvider) NewInstance(filePath string) (r Instance, err error) {
+func (me OSFileProvider) NewInstance(filePath string) (r Instance, err error) {
 	return &osFileInstance{filePath}, nil
 }
 
