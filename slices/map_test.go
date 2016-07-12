@@ -9,8 +9,8 @@ import (
 func TestFromMap(t *testing.T) {
 	sl := FromMap(map[string]int{"two": 2, "one": 1})
 	assert.Len(t, sl, 2)
-	Sort(sl, func(left, right MapKeyValue) bool {
+	Sort(sl, func(left, right MapItem) bool {
 		return left.Key.(string) < right.Key.(string)
 	})
-	assert.EqualValues(t, []MapKeyValue{{"one", 1}, {"two", 2}}, sl)
+	assert.EqualValues(t, []MapItem{{"one", 1}, {"two", 2}}, sl)
 }

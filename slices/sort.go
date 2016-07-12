@@ -25,8 +25,8 @@ func addressableSlice(slice interface{}) reflect.Value {
 	return p.Elem()
 }
 
-func AsHeap(sl interface{}, less interface{}) heap.Interface {
 // Returns a "container/heap".Interface for the provided slice.
+func HeapInterface(sl interface{}, less interface{}) heap.Interface {
 	ret := &sorter{
 		sl:   addressableSlice(sl),
 		less: reflect.ValueOf(less),
