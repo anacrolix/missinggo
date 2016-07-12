@@ -1,4 +1,4 @@
-package missinggo
+package slices
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 
 func TestSort(t *testing.T) {
 	a := []int{3, 2, 1}
-	SortSlice(a, func(left, right int) bool {
+	Sort(a, func(left, right int) bool {
 		return left < right
 	})
 	assert.EqualValues(t, []int{1, 2, 3}, a)

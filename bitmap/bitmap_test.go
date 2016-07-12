@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/anacrolix/missinggo"
 	"github.com/anacrolix/missinggo/itertools"
+	"github.com/anacrolix/missinggo/slices"
 )
 
 func TestEmptyBitmap(t *testing.T) {
@@ -21,7 +21,7 @@ func TestEmptyBitmap(t *testing.T) {
 
 func bitmapSlice(bm *Bitmap) (ret []int) {
 	sl := itertools.IterableAsSlice(bm)
-	missinggo.CastSlice(&ret, sl)
+	slices.MakeInto(&ret, sl)
 	return
 }
 

@@ -3,10 +3,9 @@ package itertools
 import (
 	"testing"
 
+	"github.com/anacrolix/missinggo/slices"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/anacrolix/missinggo"
 )
 
 func TestGroupByKey(t *testing.T) {
@@ -39,7 +38,7 @@ func TestGroupByNiladicKey(t *testing.T) {
 	gb.Next()
 	var ss []byte
 	g := IteratorAsSlice(gb.Value().(Iterator))
-	missinggo.CastSlice(&ss, g)
+	slices.MakeInto(&ss, g)
 	assert.Equal(t, s, string(ss))
 }
 

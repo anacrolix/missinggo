@@ -1,6 +1,6 @@
 package itertools
 
-import "github.com/anacrolix/missinggo"
+import "github.com/anacrolix/missinggo/slices"
 
 type Iterator interface {
 	// Advances to the next value. Returns false if there are no more values.
@@ -46,7 +46,7 @@ func SliceIterator(a []interface{}) Iterator {
 }
 
 func StringIterator(a string) Iterator {
-	return SliceIterator(missinggo.ConvertToSliceOfEmptyInterface(a))
+	return SliceIterator(slices.ToEmptyInterface(a))
 }
 
 func IteratorAsSlice(it Iterator) (ret []interface{}) {

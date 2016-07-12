@@ -1,4 +1,4 @@
-package missinggo
+package slices
 
 import (
 	"container/heap"
@@ -39,12 +39,13 @@ func (s *sorter) Push(val interface{}) {
 	s.sl = reflect.Append(s.sl, reflect.ValueOf(val))
 }
 
-func SortSlice(sl interface{}, less interface{}) {
+func Sort(sl interface{}, less interface{}) interface{} {
 	sorter := sorter{
 		sl:   reflect.ValueOf(sl),
 		less: reflect.ValueOf(less),
 	}
 	sort.Sort(&sorter)
+	return sorter.sl.Interface()
 }
 
 func addressableSlice(slice interface{}) reflect.Value {
@@ -54,7 +55,7 @@ func addressableSlice(slice interface{}) reflect.Value {
 	return p.Elem()
 }
 
-func HeapFromSlice(sl interface{}, less interface{}) heap.Interface {
+func AsHeap(sl interface{}, less interface{}) heap.Interface {
 	ret := &sorter{
 		sl:   addressableSlice(sl),
 		less: reflect.ValueOf(less),

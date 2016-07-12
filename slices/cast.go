@@ -1,4 +1,4 @@
-package missinggo
+package slices
 
 import (
 	"reflect"
@@ -6,7 +6,7 @@ import (
 	"github.com/bradfitz/iter"
 )
 
-func ConvertToSliceOfEmptyInterface(slice interface{}) (ret []interface{}) {
+func ToEmptyInterface(slice interface{}) (ret []interface{}) {
 	v := reflect.ValueOf(slice)
 	l := v.Len()
 	ret = make([]interface{}, 0, l)
@@ -16,7 +16,7 @@ func ConvertToSliceOfEmptyInterface(slice interface{}) (ret []interface{}) {
 	return
 }
 
-func CastSlice(slicePtr interface{}, fromSlice interface{}) {
+func MakeInto(slicePtr interface{}, fromSlice interface{}) {
 	fromSliceValue := reflect.ValueOf(fromSlice)
 	fromLen := fromSliceValue.Len()
 	if fromLen == 0 {
