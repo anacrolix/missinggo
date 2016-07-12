@@ -16,6 +16,7 @@ func FromMap(m interface{}) (slice []MapKeyValue) {
 }
 
 func FromElems(m interface{}) interface{} {
+// Returns all the elements []T, from m where m is map[K]T.
 	inValue := reflect.ValueOf(m)
 	outValue := reflect.MakeSlice(reflect.SliceOf(inValue.Type().Elem()), inValue.Len(), inValue.Len())
 	for i, key := range inValue.MapKeys() {

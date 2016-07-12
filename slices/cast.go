@@ -6,6 +6,7 @@ import (
 	"github.com/bradfitz/iter"
 )
 
+// Returns a copy of all the elements of slice []T as a slice of interface{}.
 func ToEmptyInterface(slice interface{}) (ret []interface{}) {
 	v := reflect.ValueOf(slice)
 	l := v.Len()
@@ -16,14 +17,16 @@ func ToEmptyInterface(slice interface{}) (ret []interface{}) {
 	return
 }
 
-func MakeInto(slicePtr interface{}, fromSlice interface{}) {
-	fromSliceValue := reflect.ValueOf(fromSlice)
+// Makes and sets a slice at *ptrTo, and type asserts all the elements from
+// from to it.
+func MakeInto(ptrTo interface{}, from interface{}) {
+	fromSliceValue := reflect.ValueOf(from)
 	fromLen := fromSliceValue.Len()
 	if fromLen == 0 {
 		return
 	}
 	// Deref the pointer to slice.
-	slicePtrValue := reflect.ValueOf(slicePtr)
+	slicePtrValue := reflect.ValueOf(ptrTo)
 	if slicePtrValue.Kind() != reflect.Ptr {
 		panic("destination is not a pointer")
 	}
