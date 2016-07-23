@@ -72,7 +72,13 @@ func (me *Subscription) runner() {
 				me.Close()
 				return
 			}
+			// Send the value back into the channel for someone else. This
+			// won't block because the channel has a capacity of 1, and this
+			// is currently the only copy of this value being sent to this
+			// channel.
 			me.next <- i
+			// The next value comes from the channel given to us by the value
+			// we just got.
 			me.next = i.next
 			select {
 			case me.Values <- i.value:
