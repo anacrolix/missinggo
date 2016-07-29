@@ -24,3 +24,13 @@ func FromMapElems(m interface{}) interface{} {
 	}
 	return outValue.Interface()
 }
+
+// Returns all the elements []K, from m where m is map[K]T.
+func FromMapKeys(m interface{}) interface{} {
+	inValue := reflect.ValueOf(m)
+	outValue := reflect.MakeSlice(reflect.SliceOf(inValue.Type().Key()), inValue.Len(), inValue.Len())
+	for i, key := range inValue.MapKeys() {
+		outValue.Index(i).Set(key)
+	}
+	return outValue.Interface()
+}
