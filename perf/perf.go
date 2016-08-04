@@ -81,6 +81,11 @@ var _ expvar.Var = &buckets{}
 
 func (t *Timer) Stop(desc string) time.Duration {
 	d := time.Since(t.started)
+	t.addDuration(desc, d)
+	return d
+}
+
+func (t *Timer) addDuration(desc string, d time.Duration) {
 	mu.RLock()
 	_m := em.Get(desc)
 	mu.RUnlock()
@@ -95,5 +100,4 @@ func (t *Timer) Stop(desc string) time.Duration {
 	}
 	m := _m.(*buckets)
 	m.Add(d)
-	return d
 }

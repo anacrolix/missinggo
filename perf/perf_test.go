@@ -43,8 +43,8 @@ func TestExponent(t *testing.T) {
 		{-3, 100 * time.Microsecond},
 	} {
 		tr := NewTimer()
-		time.Sleep(c.d)
-		assert.Equal(t, c.e, bucketExponent(tr.Stop(fmt.Sprintf("%d", c.e))), "%s", c.d)
+		tr.addDuration(fmt.Sprintf("%d", c.e), c.d)
+		assert.Equal(t, c.e, bucketExponent(c.d))
 	}
 	assert.Equal(t, `{">10ms": 1}`, em.Get("-1").String())
 	assert.Equal(t, `{">1ms": 2}`, em.Get("-2").String())
