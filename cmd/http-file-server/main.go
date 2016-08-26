@@ -4,10 +4,18 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/anacrolix/tagflag"
 )
 
 func main() {
-	const addr = ":8080"
+	var flags = struct {
+		Addr string
+	}{
+		Addr: "localhost:8080",
+	}
+	tagflag.Parse(&flags)
+	addr := flags.Addr
 	dir, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
