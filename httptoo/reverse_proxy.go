@@ -3,6 +3,7 @@ package httptoo
 import (
 	"encoding/gob"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"sync"
@@ -60,6 +61,18 @@ func ForwardResponse(w http.ResponseWriter, r *http.Response) {
 	r.Body.Close()
 }
 
+func SetOriginRequestForwardingHeaders(o, f *http.Request) {
+	xff := o.Header.Get("X-Forwarded-For")
+	hop, _, _ := net.SplitHostPort(f.RemoteAddr)
+	if xff == "" {
+		xff = hop
+	} else {
+		xff += "," + hop
+	}
+	o.Header.Set("X-Forwarded-For", xff)
+	o.Header.Set("X-Forwarded-Proto", OriginatingProtocol(f))
+}
+
 func ReverseProxy(w http.ResponseWriter, r *http.Request, originUrl string, client *http.Client) (err error) {
 	if client == nil {
 		client = http.DefaultClient
@@ -68,8 +81,7 @@ func ReverseProxy(w http.ResponseWriter, r *http.Request, originUrl string, clie
 	if err != nil {
 		return
 	}
-	// b, _ := httputil.DumpRequest(originRequest, false)
-	// os.Stderr.Write(b)
+	SetOriginRequestForwardingHeaders(originRequest, r)
 	originResp, err := client.Do(originRequest)
 	if err != nil {
 		return
