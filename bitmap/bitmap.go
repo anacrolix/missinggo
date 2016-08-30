@@ -48,6 +48,7 @@ func (me *Bitmap) Iter(f func(interface{}) bool) {
 	})
 }
 
+// Returns true if all values were traversed without early termination.
 func (me Bitmap) IterTyped(f func(int) bool) bool {
 	if me.rb == nil {
 		return true
