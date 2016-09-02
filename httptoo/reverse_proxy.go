@@ -1,6 +1,7 @@
 package httptoo
 
 import (
+	"bufio"
 	"encoding/gob"
 	"io"
 	"net"
@@ -73,15 +74,56 @@ func SetOriginRequestForwardingHeaders(o, f *http.Request) {
 	o.Header.Set("X-Forwarded-Proto", OriginatingProtocol(f))
 }
 
-func ReverseProxy(w http.ResponseWriter, r *http.Request, originUrl string, client *http.Client) (err error) {
-	if client == nil {
-		client = http.DefaultClient
+// w is for the client response. r is the request to send to the origin
+// (already "forwarded"). originUrl is where to send the request.
+func ReverseProxyUpgrade(w http.ResponseWriter, r *http.Request, originUrl string) (err error) {
+	u, err := url.Parse(originUrl)
+	if err != nil {
+		return
 	}
+	oc, err := net.Dial("tcp", u.Host)
+	if err != nil {
+		return
+	}
+	defer oc.Close()
+	err = r.Write(oc)
+	if err != nil {
+		return
+	}
+	originConnReadBuffer := bufio.NewReader(oc)
+	originResp, err := http.ReadResponse(originConnReadBuffer, r)
+	if err != nil {
+		return
+	}
+	if originResp.StatusCode != 101 {
+		ForwardResponse(w, originResp)
+		return
+	}
+	cc, _, err := w.(http.Hijacker).Hijack()
+	if err != nil {
+		return
+	}
+	defer cc.Close()
+	originResp.Write(cc)
+	go io.Copy(oc, cc)
+	// Let the origin connection control when this routine returns, as we
+	// should trust it more.
+	io.Copy(cc, originConnReadBuffer)
+	return
+}
+
+func ReverseProxy(w http.ResponseWriter, r *http.Request, originUrl string, client *http.Client) (err error) {
 	originRequest, err := RedirectedRequest(r, originUrl)
 	if err != nil {
 		return
 	}
 	SetOriginRequestForwardingHeaders(originRequest, r)
+	if r.Header.Get("Connection") == "Upgrade" {
+		return ReverseProxyUpgrade(w, originRequest, originUrl)
+	}
+	if client == nil {
+		client = http.DefaultClient
+	}
 	originResp, err := client.Do(originRequest)
 	if err != nil {
 		return
