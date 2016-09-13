@@ -15,11 +15,16 @@ func main() {
 		Addr: "localhost:8080",
 	}
 	tagflag.Parse(&flags)
-	addr := flags.Addr
 	dir, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
+	l, err := net.Listen("tcp", flags.Addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer l.Close()
+	addr := l.Addr()
 	log.Printf("serving %q at %s", dir, addr)
-	log.Fatal(http.ListenAndServe(addr, http.FileServer(http.Dir(dir))))
+	log.Fatal(http.Serve(l, allowCORS(http.FileServer(http.Dir(dir)))))
 }
