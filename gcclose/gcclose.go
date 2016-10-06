@@ -5,12 +5,10 @@ import (
 	"log"
 	"runtime"
 	"sync"
-
-	"github.com/anacrolix/missinggo"
 )
 
 var (
-	Mu       sync.Mutex
+	mu       sync.Mutex
 	wrappers = map[interface{}]*Wrapper{}
 )
 
@@ -20,7 +18,11 @@ type Wrapper struct {
 	Object  interface{}
 	Closer  func()
 	NumRefs int
-	Closed  missinggo.Event
+	closed  chan struct{}
+}
+
+func (me *Wrapper) Closed() <-chan struct{} {
+	return me.closed
 }
 
 // Ref decrements its object's reference count when garbage collected. When
@@ -39,6 +41,7 @@ func newWrapper(obj interface{}, closer func()) *Wrapper {
 	return &Wrapper{
 		Object: obj,
 		Closer: closer,
+		closed: make(chan struct{}),
 	}
 }
 
@@ -46,6 +49,8 @@ func newWrapper(obj interface{}, closer func()) *Wrapper {
 // This must be called with Mu locked, to prevent multiple wrappers for the
 // same object.
 func NewRef(obj interface{}, closer func()) *Ref {
+	mu.Lock()
+	defer mu.Unlock()
 	w, ok := wrappers[obj]
 	if !ok {
 		w = newWrapper(obj, closer)
@@ -58,14 +63,14 @@ func NewRef(obj interface{}, closer func()) *Ref {
 }
 
 func refFinalizer(r *Ref) {
-	Mu.Lock()
-	defer Mu.Unlock()
+	mu.Lock()
+	defer mu.Unlock()
 	r.w.NumRefs--
-	if r.w.NumRefs != 0 {
+	if r.w.NumRefs > 0 {
 		return
 	}
 	log.Printf("closing object with no refs: %s", r.w.Object)
 	r.w.Closer()
-	r.w.Closed.Set()
+	close(r.w.closed)
 	delete(wrappers, r.w)
 }
