@@ -121,9 +121,6 @@ func ReverseProxy(w http.ResponseWriter, r *http.Request, originUrl string, clie
 	if r.Header.Get("Connection") == "Upgrade" {
 		return ReverseProxyUpgrade(w, originRequest, originUrl)
 	}
-	if client == nil {
-		client = http.DefaultClient
-	}
 	originResp, err := client.Do(originRequest)
 	if err != nil {
 		return
