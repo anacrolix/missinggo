@@ -27,22 +27,13 @@ type handler struct {
 
 func (me *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	matches := me.matchingHandlers(r)
-	switch len(matches) {
-	case 0:
+	if len(matches) == 0 {
 		http.NotFound(w, r)
 		return
-	case 1:
-		m := matches[0]
-		r = r.WithContext(context.WithValue(r.Context(), pathParamContextKey, &PathParams{m}))
-		m.handler.userHandler.ServeHTTP(w, r)
-	default:
-		panic("multiple handlers match: " + strings.Join(func() (ret []string) {
-			for _, m := range matches {
-				ret = append(ret, m.handler.path.String())
-			}
-			return
-		}(), ", "))
 	}
+	m := matches[0]
+	r = r.WithContext(context.WithValue(r.Context(), pathParamContextKey, &PathParams{m}))
+	m.handler.userHandler.ServeHTTP(w, r)
 }
 
 type match struct {
