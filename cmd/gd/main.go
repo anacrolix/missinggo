@@ -23,6 +23,25 @@ func escape(encoding string) {
 	}
 }
 
+func unescape(encoding string) {
+	switch {
+	case strings.HasPrefix("query", encoding):
+		b, err := ioutil.ReadAll(os.Stdin)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		s, err := url.QueryUnescape(string(b))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		os.Stdout.Write([]byte(s))
+	default:
+		fmt.Fprintf(os.Stderr, "unknown unescape encoding: %q\n", encoding)
+	}
+}
+
 func main() {
 	if len(os.Args) != 3 {
 		fmt.Fprintf(os.Stderr, "expected two arguments: <mode> <encoding>: got %d\n", len(os.Args)-1)
@@ -32,6 +51,8 @@ func main() {
 	switch {
 	case strings.HasPrefix("escape", mode):
 		escape(os.Args[2])
+	case strings.HasPrefix("unescape", mode) || strings.HasPrefix("decode", mode):
+		unescape(os.Args[2])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown mode: %q\n", mode)
 		os.Exit(2)
