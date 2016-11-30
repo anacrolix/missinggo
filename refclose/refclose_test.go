@@ -34,7 +34,7 @@ func (me refTest) run() {
 			}
 			// obj := curObj
 			mu.Unlock()
-			ref.Release(func() {
+			ref.SetCloser(func() {
 				mu.Lock()
 				if curObj.closed {
 					panic("object already closed")
@@ -43,6 +43,7 @@ func (me refTest) run() {
 				curObj = nil
 				mu.Unlock()
 			})
+			ref.Release()
 		}()
 	}
 	wg.Wait()

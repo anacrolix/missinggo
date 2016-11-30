@@ -1,6 +1,11 @@
 package refclose
 
-import "sync"
+import (
+	"runtime/pprof"
+	"sync"
+)
+
+var profile = pprof.NewProfile("refs")
 
 type RefPool struct {
 	mu sync.Mutex
@@ -23,13 +28,10 @@ func (me *RefPool) inc(key interface{}) {
 	r.numRefs++
 }
 
-func (me *RefPool) dec(key interface{}, closer Closer) {
+func (me *RefPool) dec(key interface{}) {
 	me.mu.Lock()
 	defer me.mu.Unlock()
 	r := me.rs[key]
-	if closer != nil && r.closer == nil {
-		r.closer = closer
-	}
 	r.numRefs--
 	if r.numRefs > 0 {
 		return
@@ -48,10 +50,12 @@ type Resource struct {
 
 func (me *RefPool) NewRef(key interface{}) (ret *Ref) {
 	me.inc(key)
-	return &Ref{
+	ret = &Ref{
 		pool: me,
 		key:  key,
 	}
+	profile.Add(ret, 0)
+	return
 }
 
 type Ref struct {
@@ -61,15 +65,18 @@ type Ref struct {
 	closed bool
 }
 
-func (me *Ref) Abort() {
-	me.Release(nil)
+func (me *Ref) SetCloser(closer Closer) {
+	me.pool.mu.Lock()
+	defer me.pool.mu.Unlock()
+	me.pool.rs[me.key].closer = closer
 }
 
-func (me *Ref) Release(closer Closer) {
+func (me *Ref) Release() {
 	me.mu.Lock()
 	defer me.mu.Unlock()
 	if me.closed {
 		panic("already closed ref")
 	}
-	me.pool.dec(me.key, closer)
+	profile.Remove(me)
+	me.pool.dec(me.key)
 }
