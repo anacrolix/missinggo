@@ -9,7 +9,7 @@ var profile = pprof.NewProfile("refs")
 
 type RefPool struct {
 	mu sync.Mutex
-	rs map[interface{}]*Resource
+	rs map[interface{}]*resource
 }
 
 type Closer func()
@@ -19,9 +19,9 @@ func (me *RefPool) inc(key interface{}) {
 	defer me.mu.Unlock()
 	r := me.rs[key]
 	if r == nil {
-		r = new(Resource)
+		r = new(resource)
 		if me.rs == nil {
-			me.rs = make(map[interface{}]*Resource)
+			me.rs = make(map[interface{}]*resource)
 		}
 		me.rs[key] = r
 	}
@@ -43,7 +43,7 @@ func (me *RefPool) dec(key interface{}) {
 	delete(me.rs, key)
 }
 
-type Resource struct {
+type resource struct {
 	closer  Closer
 	numRefs int
 }
