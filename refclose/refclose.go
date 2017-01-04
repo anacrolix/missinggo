@@ -71,12 +71,23 @@ func (me *Ref) SetCloser(closer Closer) {
 	me.pool.rs[me.key].closer = closer
 }
 
+func (me *Ref) panicIfClosed() {
+	if me.closed {
+		panic("ref is closed")
+	}
+}
+
 func (me *Ref) Release() {
 	me.mu.Lock()
 	defer me.mu.Unlock()
-	if me.closed {
-		panic("already closed ref")
-	}
+	me.panicIfClosed()
 	profile.Remove(me)
 	me.pool.dec(me.key)
+}
+
+func (me *Ref) Key() interface{} {
+	me.mu.Lock()
+	defer me.mu.Unlock()
+	me.panicIfClosed()
+	return me.key
 }
