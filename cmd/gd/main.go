@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/base32"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -17,6 +20,13 @@ func escape(encoding string) {
 			os.Exit(1)
 		}
 		os.Stdout.Write([]byte(url.QueryEscape(string(b))))
+	case strings.HasPrefix("hex", encoding):
+		b, err := ioutil.ReadAll(os.Stdin)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		os.Stdout.Write([]byte(hex.EncodeToString(b)))
 	default:
 		fmt.Fprintf(os.Stderr, "unknown escape encoding: %q\n", encoding)
 		os.Exit(2)
@@ -37,6 +47,9 @@ func unescape(encoding string) {
 			os.Exit(1)
 		}
 		os.Stdout.Write([]byte(s))
+	case strings.HasPrefix("b32", encoding):
+		d := base32.NewDecoder(base32.StdEncoding, os.Stdin)
+		io.Copy(os.Stdout, d)
 	default:
 		fmt.Fprintf(os.Stderr, "unknown unescape encoding: %q\n", encoding)
 	}
