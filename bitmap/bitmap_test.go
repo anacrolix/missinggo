@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/anacrolix/missinggo/itertools"
+	"github.com/anacrolix/missinggo/iter"
 	"github.com/anacrolix/missinggo/slices"
 )
 
@@ -14,13 +14,13 @@ func TestEmptyBitmap(t *testing.T) {
 	var bm Bitmap
 	assert.False(t, bm.Contains(0))
 	bm.Remove(0)
-	it := itertools.NewIterator(&bm)
+	it := iter.NewIterator(&bm)
 	assert.Panics(t, func() { it.Value() })
 	assert.False(t, it.Next())
 }
 
 func bitmapSlice(bm *Bitmap) (ret []int) {
-	sl := itertools.IterableAsSlice(bm)
+	sl := iter.IterableAsSlice(bm)
 	slices.MakeInto(&ret, sl)
 	return
 }

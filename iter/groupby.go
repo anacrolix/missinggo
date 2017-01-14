@@ -1,4 +1,4 @@
-package itertools
+package iter
 
 type groupBy struct {
 	curKey     interface{}

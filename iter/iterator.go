@@ -1,4 +1,4 @@
-package itertools
+package iter
 
 import "github.com/anacrolix/missinggo/slices"
 
@@ -39,17 +39,17 @@ func (me *sliceIterator) Value() interface{} {
 
 func (me *sliceIterator) Stop() {}
 
-func SliceIterator(a []interface{}) Iterator {
+func Slice(a []interface{}) Iterator {
 	return &sliceIterator{
 		slice: a,
 	}
 }
 
 func StringIterator(a string) Iterator {
-	return SliceIterator(slices.ToEmptyInterface(a))
+	return Slice(slices.ToEmptyInterface(a))
 }
 
-func IteratorAsSlice(it Iterator) (ret []interface{}) {
+func ToSlice(it Iterator) (ret []interface{}) {
 	for it.Next() {
 		ret = append(ret, it.Value())
 	}

@@ -1,4 +1,4 @@
-package itertools
+package iter
 
 type map_ struct {
 	Iterator

@@ -1,4 +1,4 @@
-package itertools
+package iter
 
 import "math/rand"
 
