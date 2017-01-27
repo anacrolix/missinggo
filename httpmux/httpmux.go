@@ -52,13 +52,26 @@ func (me *Mux) matchingHandlers(r *http.Request) (ret []match) {
 	return
 }
 
-func (me *Mux) Handle(path string, h http.Handler) {
-	if !strings.HasSuffix(path, "$") {
-		path += "$"
+func (me *Mux) distinctHandlerRegexp(r *regexp.Regexp) bool {
+	for _, h := range me.handlers {
+		if h.path.String() == r.String() {
+			return false
+		}
 	}
-	re, err := regexp.Compile("^" + path)
+	return true
+}
+
+func (me *Mux) Handle(path string, h http.Handler) {
+	expr := "^" + path
+	if !strings.HasSuffix(expr, "$") {
+		expr += "$"
+	}
+	re, err := regexp.Compile(expr)
 	if err != nil {
 		panic(err)
+	}
+	if !me.distinctHandlerRegexp(re) {
+		panic(fmt.Sprintf("path %q is not distinct", path))
 	}
 	me.handlers = append(me.handlers, handler{re, h})
 }
