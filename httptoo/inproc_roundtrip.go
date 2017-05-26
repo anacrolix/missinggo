@@ -1,6 +1,7 @@
 package httptoo
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"sync"
@@ -20,15 +21,6 @@ var _ interface {
 	http.ResponseWriter
 	http.CloseNotifier
 } = &responseWriter{}
-
-func (me *responseWriter) CloseNotify() <-chan bool {
-	ret := make(chan bool, 1)
-	go func() {
-		<-me.closed.C()
-		ret <- true
-	}()
-	return ret
-}
 
 func (me *responseWriter) Header() http.Header {
 	if me.r.Header == nil {
@@ -69,7 +61,13 @@ func (me *responseWriter) runHandler(h http.Handler, req *http.Request) {
 	}{pr, eventCloser{pr, &me.closed}}
 	defer me.bodyWriter.Close()
 	defer me.WriteHeader(200)
-	h.ServeHTTP(me, req)
+	ctx, cancel := context.WithCancel(req.Context())
+	defer cancel()
+	go func() {
+		<-me.closed.C()
+		cancel()
+	}()
+	h.ServeHTTP(me, req.WithContext(ctx))
 }
 
 type eventCloser struct {
