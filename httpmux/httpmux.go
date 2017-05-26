@@ -10,7 +10,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-var pathParamContextKey = &struct{}{}
+var pathParamContextKey = new(struct{})
 
 type Mux struct {
 	handlers []handler
