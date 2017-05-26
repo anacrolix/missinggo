@@ -79,9 +79,11 @@ func (me *buckets) String() string {
 
 var _ expvar.Var = &buckets{}
 
-func (t *Timer) Stop(desc string) time.Duration {
+func (t *Timer) Mark(events ...string) time.Duration {
 	d := time.Since(t.started)
-	t.addDuration(desc, d)
+	for _, e := range events {
+		t.addDuration(e, d)
+	}
 	return d
 }
 

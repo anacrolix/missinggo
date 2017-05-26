@@ -12,22 +12,22 @@ import (
 
 func TestTimer(t *testing.T) {
 	tr := NewTimer()
-	tr.Stop("hiyo")
-	tr.Stop("hiyo")
+	tr.Mark("hiyo")
+	tr.Mark("hiyo")
 	t.Log(em.Get("hiyo").(*buckets))
 }
 
 func BenchmarkStopWarm(b *testing.B) {
 	tr := NewTimer()
 	for range iter.N(b.N) {
-		tr.Stop("a")
+		tr.Mark("a")
 	}
 }
 
 func BenchmarkStopCold(b *testing.B) {
 	tr := NewTimer()
 	for i := range iter.N(b.N) {
-		tr.Stop(strconv.FormatInt(int64(i), 10))
+		tr.Mark(strconv.FormatInt(int64(i), 10))
 	}
 }
 
