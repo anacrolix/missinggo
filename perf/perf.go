@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"expvar"
 	"fmt"
+	"log"
 	"math"
 	"sync"
 	"time"
@@ -18,10 +19,31 @@ var (
 
 type Timer struct {
 	started time.Time
+	log     bool
+	name    string
 }
 
-func NewTimer() Timer {
-	return Timer{time.Now()}
+func NewTimer(opts ...timerOpt) (t Timer) {
+	t.started = time.Now()
+	for _, o := range opts {
+		o(&t)
+	}
+	if t.log && t.name != "" {
+		log.Printf("starting timer %q", t.name)
+	}
+	return
+}
+
+type timerOpt func(*Timer)
+
+func Log(t *Timer) {
+	t.log = true
+}
+
+func Name(name string) func(*Timer) {
+	return func(t *Timer) {
+		t.name = name
+	}
 }
 
 // The exponent is the upper bound of the duration in seconds.
@@ -102,4 +124,11 @@ func (t *Timer) addDuration(desc string, d time.Duration) {
 	}
 	m := _m.(*buckets)
 	m.Add(d)
+	if t.log {
+		if t.name != "" {
+			log.Printf("timer %q got event %q after %s", t.name, desc, d)
+		} else {
+			log.Printf("marking event %q after %s", desc, d)
+		}
+	}
 }
