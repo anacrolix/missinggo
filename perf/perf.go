@@ -47,13 +47,12 @@ func Name(name string) func(*Timer) {
 }
 
 // The exponent is the upper bound of the duration in seconds.
-func bucketExponent(d time.Duration) int {
-	e := -9
-	for d != 0 {
-		d /= 10
-		e++
+func bucketExponent(d time.Duration) (e int) {
+	if d == 0 {
+		return 0
 	}
-	return e
+	e = int(math.Floor(math.Log2(float64(d)/float64(time.Second)))) + 31
+	return
 }
 
 type buckets struct {
@@ -64,18 +63,20 @@ type buckets struct {
 func (me *buckets) Add(t time.Duration) {
 	e := bucketExponent(t)
 	me.mu.Lock()
-	for e+9 >= len(me.buckets) {
+	for e >= len(me.buckets) {
 		me.buckets = append(me.buckets, 0)
 	}
-	me.buckets[e+9]++
+	me.buckets[e]++
 	me.mu.Unlock()
 }
 
 func humanExponent(e int) string {
-	if e == -9 {
+	if e == 0 {
 		return "<1ns"
 	}
-	return ">" + time.Duration(math.Pow10(e-1)).String()
+	lb := float64(time.Second) * math.Exp2(float64(e-31))
+	ub := float64(time.Second) * math.Exp2(float64(e-30))
+	return fmt.Sprintf("[%s,%s)", time.Duration(lb).String(), time.Duration(ub).String())
 }
 
 func (me *buckets) String() string {
@@ -104,6 +105,9 @@ var _ expvar.Var = (*buckets)(nil)
 func (t *Timer) Mark(events ...string) time.Duration {
 	d := time.Since(t.started)
 	for _, e := range events {
+		if t.name != "" {
+			e = t.name + "/" + e
+		}
 		t.addDuration(e, d)
 	}
 	return d

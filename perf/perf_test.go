@@ -33,20 +33,18 @@ func BenchmarkStopCold(b *testing.B) {
 
 func TestExponent(t *testing.T) {
 	for _, c := range []struct {
-		e int
-		d time.Duration
+		e             int
+		d             time.Duration
+		humanInterval string
 	}{
-		{-1, 10 * time.Millisecond},
-		{-2, 5 * time.Millisecond},
-		{-2, time.Millisecond},
-		{-3, 500 * time.Microsecond},
-		{-3, 100 * time.Microsecond},
+		{0, 0, "<1ns"},
+		{31, 1 * time.Second, "[1s,2s)"},
+		{30, 1*time.Second - 1, "[500ms,1s)"},
 	} {
+		assert.Equal(t, c.e, bucketExponent(c.d))
+		assert.Equal(t, c.humanInterval, humanExponent(c.e))
 		tr := NewTimer()
 		tr.addDuration(fmt.Sprintf("%d", c.e), c.d)
 		assert.Equal(t, c.e, bucketExponent(c.d))
 	}
-	assert.Equal(t, `{">10ms": 1}`, em.Get("-1").String())
-	assert.Equal(t, `{">1ms": 2}`, em.Get("-2").String())
-	assert.Equal(t, `{">100µs": 2}`, em.Get("-3").String())
 }
