@@ -2,6 +2,7 @@ package httpmux
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"path"
 	"regexp"
@@ -33,6 +34,14 @@ func (me *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	m := matches[0]
 	r = r.WithContext(context.WithValue(r.Context(), pathParamContextKey, &PathParams{m}))
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
+		log.Printf("panic while handling %v", m)
+		panic(r)
+	}()
 	m.handler.userHandler.ServeHTTP(w, r)
 }
 
