@@ -99,7 +99,7 @@ func (me *buckets) String() string {
 	return b.String()
 }
 
-var _ expvar.Var = &buckets{}
+var _ expvar.Var = (*buckets)(nil)
 
 func (t *Timer) Mark(events ...string) time.Duration {
 	d := time.Since(t.started)
