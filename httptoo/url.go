@@ -3,7 +3,6 @@ package httptoo
 import (
 	"net/http"
 	"net/url"
-	"path"
 )
 
 // Deep copies a URL. I could call it DeepCopyURL, but what else would you be
@@ -49,7 +48,7 @@ func AppendURL(u, v *url.URL) *url.URL {
 	u = CopyURL(u)
 	clobberString(&u.Scheme, v.Scheme)
 	clobberString(&u.Host, v.Host)
-	u.Path = path.Join(u.Path, v.Path)
+	u.Path += v.Path
 	q := u.Query()
 	for k, v := range v.Query() {
 		q[k] = append(q[k], v...)
