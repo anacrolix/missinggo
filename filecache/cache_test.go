@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bradfitz/iter"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -15,14 +16,10 @@ import (
 
 func TestCache(t *testing.T) {
 	td, err := ioutil.TempDir("", "gotest")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	defer os.RemoveAll(td)
 	c, err := NewCache(filepath.Join(td, "cache"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	assert.EqualValues(t, 0, c.Info().Filled)
 	c.WalkItems(func(i ItemInfo) {})
 	_, err = c.OpenFile("/", os.O_CREATE)
@@ -81,4 +78,18 @@ func TestSanitizePath(t *testing.T) {
 	assert.Equal(t, "a", sanitizePath("/a//b/.."))
 	assert.Equal(t, "a", sanitizePath("../a"))
 	assert.Equal(t, "a", sanitizePath("./a"))
+}
+
+func BenchmarkCacheOpenFile(t *testing.B) {
+	td, err := ioutil.TempDir("", "")
+	require.NoError(t, err)
+	defer os.RemoveAll(td)
+	c, err := NewCache(td)
+	for range iter.N(t.N) {
+		func() {
+			f, err := c.OpenFile("a", os.O_CREATE|os.O_RDWR)
+			require.NoError(t, err)
+			assert.NoError(t, f.Close())
+		}()
+	}
 }
