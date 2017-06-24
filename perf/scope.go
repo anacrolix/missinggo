@@ -4,8 +4,8 @@ import (
 	"runtime"
 )
 
-func ScopeTimer() func() {
-	t := NewTimer(Name(getCallerName()), Log)
+func ScopeTimer(opts ...timerOpt) func() {
+	t := NewTimer(append([]timerOpt{Name(getCallerName())}, opts...)...)
 	return func() { t.Mark("returned") }
 }
 
