@@ -161,10 +161,18 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 		path: path,
 		f:    pproffd.WrapOSFile(f),
 	}
+	accessed := time.Now()
 	me.mu.Lock()
 	go func() {
 		defer me.mu.Unlock()
-		me.statItem(path, time.Now())
+		info, ok := me.removeInfo(path)
+		if !ok {
+			me.statItem(path, accessed)
+			return
+		}
+		info.Accessed = accessed
+		me.insertItem(info)
+		me.paths[path] = info
 	}()
 	return
 }
