@@ -65,7 +65,7 @@ func TestCache(t *testing.T) {
 	assert.NotNil(t, err)
 	_, err = b.Write([]byte("boom!"))
 	// "a" and "b" have been evicted.
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.EqualValues(t, 0, c.Info().Filled)
 	assert.EqualValues(t, 0, c.Info().NumItems)
 	_, err = a.Seek(0, os.SEEK_SET)

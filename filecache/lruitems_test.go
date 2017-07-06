@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bradfitz/iter"
+	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkInsert(b *testing.B) {
@@ -19,4 +20,12 @@ func BenchmarkInsert(b *testing.B) {
 			})
 		}
 	}
+}
+
+func TestLruDuplicateAccessTimes(t *testing.T) {
+	li := newLRUItems()
+	now := time.Now()
+	li.Insert(ItemInfo{Accessed: now, Path: "a"})
+	li.Insert(ItemInfo{Accessed: now, Path: "b"})
+	assert.EqualValues(t, 2, li.om.Len())
 }

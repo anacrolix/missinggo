@@ -45,9 +45,10 @@ type ItemInfo struct {
 func (me *Cache) WalkItems(cb func(ItemInfo)) {
 	me.mu.Lock()
 	defer me.mu.Unlock()
-	for e := me.items.Front(); e != nil; e = e.Next() {
-		cb(e.Value().(ItemInfo))
-	}
+	me.items.Iter(func(ii ItemInfo) bool {
+		cb(ii)
+		return true
+	})
 }
 
 func (me *Cache) Info() (ret CacheInfo) {
