@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anacrolix/missinggo"
 	"github.com/anacrolix/missinggo/pproffd"
 	"github.com/anacrolix/missinggo/resource"
 )
@@ -20,12 +19,12 @@ const (
 )
 
 type Cache struct {
+	root     string
 	mu       sync.Mutex
 	capacity int64
 	filled   int64
 	policy   Policy
 	paths    map[key]ItemInfo
-	root     string
 }
 
 type CacheInfo struct {
@@ -155,23 +154,37 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 		return
 	}
 	ret = &File{
-		c:    me,
 		path: key,
 		f:    pproffd.WrapOSFile(f),
+		onRead: func(n int) {
+			me.updateItem(key, func(i *ItemInfo, ok bool) bool {
+				i.Accessed = time.Now()
+				return ok
+			})
+		},
+		afterWrite: func(endOff int64) {
+			me.mu.Lock()
+			defer me.mu.Unlock()
+			me.updateItem(key, func(i *ItemInfo, ok bool) bool {
+				i.Accessed = time.Now()
+				if endOff > i.Size {
+					i.Size = endOff
+				}
+				return ok
+			})
+		},
 	}
 	accessed := time.Now()
 	me.mu.Lock()
 	go func() {
 		defer me.mu.Unlock()
-		info, ok := me.removeInfo(key)
-		if !ok {
-			me.statItem(key, accessed)
-			return
-		}
-		info.Accessed = accessed
-		me.filled += info.Size
-		me.policy.Used(key, accessed)
-		me.paths[key] = info
+		me.updateItem(key, func(i *ItemInfo, ok bool) bool {
+			if !ok {
+				*i, ok = me.statKey(key)
+			}
+			i.Accessed = accessed
+			return ok
+		})
 	}()
 	return
 }
@@ -195,7 +208,14 @@ func (me *Cache) rescan() {
 			log.Print(err)
 			return nil
 		}
-		me.statItem(sanitizePath(path), time.Time{})
+		key := sanitizePath(path)
+		me.updateItem(key, func(i *ItemInfo, ok bool) bool {
+			if ok {
+				panic("scanned duplicate items")
+			}
+			*i, ok = me.statKey(key)
+			return ok
+		})
 		return nil
 	})
 	if err != nil {
@@ -203,45 +223,31 @@ func (me *Cache) rescan() {
 	}
 }
 
-func (me *Cache) removeInfo(path key) (ret ItemInfo, ok bool) {
-	ret, ok = me.paths[path]
-	if !ok {
-		return
-	}
-	me.policy.Forget(path)
-	me.filled -= ret.Size
-	delete(me.paths, path)
-	return
-}
-
-// Triggers the item for path to be updated. If access is non-zero, set the
-// item's access time to that value, otherwise deduce it appropriately.
-func (me *Cache) statItem(path key, access time.Time) {
-	info, ok := me.removeInfo(path)
-	fi, err := os.Stat(me.realpath(path))
+func (me *Cache) statKey(k key) (i ItemInfo, ok bool) {
+	fi, err := os.Stat(me.realpath(k))
 	if os.IsNotExist(err) {
 		return
 	}
 	if err != nil {
 		panic(err)
 	}
-	if !ok {
-		info.Path = path
+	i.FromFileInfo(fi, k)
+	ok = true
+	return
+}
+
+func (me *Cache) updateItem(k key, u func(*ItemInfo, bool) bool) {
+	ii, ok := me.paths[k]
+	me.filled -= ii.Size
+	if u(&ii, ok) {
+		me.filled += ii.Size
+		me.policy.Used(k, ii.Accessed)
+		me.paths[k] = ii
+	} else {
+		me.policy.Forget(k)
+		delete(me.paths, k)
 	}
-	if !access.IsZero() {
-		info.Accessed = access
-	}
-	if info.Accessed.IsZero() {
-		info.Accessed = missinggo.Max(
-			func(left, right time.Time) bool { return left.Before(right) },
-			missinggo.FileInfoAccessTime(fi),
-			fi.ModTime(),
-		).(time.Time)
-	}
-	info.Size = fi.Size()
-	me.filled += info.Size
-	me.policy.Used(path, info.Accessed)
-	me.paths[path] = info
+	me.trimToCapacity()
 }
 
 func (me *Cache) realpath(path key) string {
@@ -258,14 +264,19 @@ func (me *Cache) pruneEmptyDirs(path key) {
 	pruneEmptyDirs(me.root, me.realpath(path))
 }
 
-func (me *Cache) remove(path key) (err error) {
-	err = os.Remove(me.realpath(path))
+func (me *Cache) remove(path key) error {
+	err := os.Remove(me.realpath(path))
 	if os.IsNotExist(err) {
 		err = nil
 	}
+	if err != nil {
+		return err
+	}
 	me.pruneEmptyDirs(path)
-	me.removeInfo(path)
-	return
+	me.updateItem(path, func(*ItemInfo, bool) bool {
+		return false
+	})
+	return nil
 }
 
 func (me *Cache) trimToCapacity() {
@@ -294,9 +305,14 @@ func (me *Cache) Rename(from, to string) (err error) {
 	if err != nil {
 		return
 	}
-	me.removeInfo(_from)
-	me.pruneEmptyDirs(_from)
-	me.statItem(_to, time.Now())
+	me.updateItem(_from, func(i *ItemInfo, ok bool) bool {
+		if ok {
+			i.Path = _to
+		} else {
+			*i, ok = me.statKey(_to)
+		}
+		return ok
+	})
 	return
 }
 

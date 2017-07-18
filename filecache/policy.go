@@ -8,7 +8,7 @@ type policyItemKey interface {
 
 type Policy interface {
 	Choose() policyItemKey
-	Used(k policyItemKey, when time.Time)
+	Used(k policyItemKey, at time.Time)
 	Forget(k policyItemKey)
 	NumItems() int
 }
