@@ -170,6 +170,7 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 			return
 		}
 		info.Accessed = accessed
+		me.filled += info.Size
 		me.insertItem(info)
 		me.paths[key] = info
 	}()
