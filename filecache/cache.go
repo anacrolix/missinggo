@@ -23,7 +23,7 @@ type Cache struct {
 	mu       sync.Mutex
 	capacity int64
 	filled   int64
-	items    *lruItems
+	policy   Policy
 	paths    map[key]ItemInfo
 	root     string
 }
@@ -45,10 +45,9 @@ type ItemInfo struct {
 func (me *Cache) WalkItems(cb func(ItemInfo)) {
 	me.mu.Lock()
 	defer me.mu.Unlock()
-	me.items.Iter(func(ii ItemInfo) bool {
+	for _, ii := range me.paths {
 		cb(ii)
-		return true
-	})
+	}
 }
 
 func (me *Cache) Info() (ret CacheInfo) {
@@ -171,7 +170,7 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 		}
 		info.Accessed = accessed
 		me.filled += info.Size
-		me.insertItem(info)
+		me.policy.Used(key, accessed)
 		me.paths[key] = info
 	}()
 	return
@@ -179,7 +178,7 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 
 func (me *Cache) rescan() {
 	me.filled = 0
-	me.items = newLRUItems()
+	me.policy = new(lru)
 	me.paths = make(map[key]ItemInfo)
 	err := filepath.Walk(me.root, func(path string, info os.FileInfo, err error) error {
 		if os.IsNotExist(err) {
@@ -204,18 +203,12 @@ func (me *Cache) rescan() {
 	}
 }
 
-func (me *Cache) insertItem(i ItemInfo) {
-	me.items.Insert(i)
-}
-
 func (me *Cache) removeInfo(path key) (ret ItemInfo, ok bool) {
 	ret, ok = me.paths[path]
 	if !ok {
 		return
 	}
-	if !me.items.Remove(ret) {
-		panic(ret)
-	}
+	me.policy.Forget(path)
 	me.filled -= ret.Size
 	delete(me.paths, path)
 	return
@@ -247,7 +240,7 @@ func (me *Cache) statItem(path key, access time.Time) {
 	}
 	info.Size = fi.Size()
 	me.filled += info.Size
-	me.insertItem(info)
+	me.policy.Used(path, info.Accessed)
 	me.paths[path] = info
 }
 
@@ -280,8 +273,7 @@ func (me *Cache) trimToCapacity() {
 		return
 	}
 	for me.filled > me.capacity {
-		item := me.items.LRU()
-		me.remove(item.Path)
+		me.remove(me.policy.Choose().(key))
 	}
 }
 
