@@ -13,13 +13,13 @@ import (
 type File struct {
 	mu   sync.Mutex
 	c    *Cache
-	path string
+	path key
 	f    pproffd.OSFile
 	gone bool
 }
 
 func (me *File) Remove() (err error) {
-	return me.c.Remove(me.path)
+	return me.c.Remove(string(me.path))
 }
 
 func (me *File) Seek(offset int64, whence int) (ret int64, err error) {

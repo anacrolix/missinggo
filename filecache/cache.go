@@ -24,7 +24,7 @@ type Cache struct {
 	capacity int64
 	filled   int64
 	items    *lruItems
-	paths    map[string]ItemInfo
+	paths    map[key]ItemInfo
 	root     string
 }
 
@@ -37,7 +37,7 @@ type CacheInfo struct {
 type ItemInfo struct {
 	Accessed time.Time
 	Size     int64
-	Path     string
+	Path     key
 }
 
 // Calls the function for every item known to the cache. The ItemInfo should
@@ -82,11 +82,11 @@ func NewCache(root string) (ret *Cache, err error) {
 }
 
 // An empty return path is an error.
-func sanitizePath(p string) (ret string) {
+func sanitizePath(p string) (ret key) {
 	if p == "" {
 		return
 	}
-	ret = path.Clean("/" + p)
+	ret = key(path.Clean("/" + p))
 	if ret[0] == '/' {
 		ret = ret[1:]
 	}
@@ -122,12 +122,10 @@ func pruneEmptyDirs(root string, leaf string) (err error) {
 	}
 }
 
-func (me *Cache) Remove(path string) (err error) {
-	path = sanitizePath(path)
+func (me *Cache) Remove(path string) error {
 	me.mu.Lock()
 	defer me.mu.Unlock()
-	err = me.remove(path)
-	return
+	return me.remove(sanitizePath(path))
 }
 
 var (
@@ -140,18 +138,18 @@ func (me *Cache) StatFile(path string) (os.FileInfo, error) {
 }
 
 func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
-	path = sanitizePath(path)
-	if path == "" {
+	key := sanitizePath(path)
+	if key == "" {
 		err = ErrIsDir
 		return
 	}
-	f, err := os.OpenFile(me.realpath(path), flag, filePerm)
+	f, err := os.OpenFile(me.realpath(key), flag, filePerm)
 	if flag&os.O_CREATE != 0 && os.IsNotExist(err) {
 		// Ensure intermediate directories and try again.
-		os.MkdirAll(filepath.Dir(me.realpath(path)), dirPerm)
-		f, err = os.OpenFile(me.realpath(path), flag, filePerm)
+		os.MkdirAll(filepath.Dir(me.realpath(key)), dirPerm)
+		f, err = os.OpenFile(me.realpath(key), flag, filePerm)
 		if err != nil {
-			go me.pruneEmptyDirs(path)
+			go me.pruneEmptyDirs(key)
 		}
 	}
 	if err != nil {
@@ -159,21 +157,21 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 	}
 	ret = &File{
 		c:    me,
-		path: path,
+		path: key,
 		f:    pproffd.WrapOSFile(f),
 	}
 	accessed := time.Now()
 	me.mu.Lock()
 	go func() {
 		defer me.mu.Unlock()
-		info, ok := me.removeInfo(path)
+		info, ok := me.removeInfo(key)
 		if !ok {
-			me.statItem(path, accessed)
+			me.statItem(key, accessed)
 			return
 		}
 		info.Accessed = accessed
 		me.insertItem(info)
-		me.paths[path] = info
+		me.paths[key] = info
 	}()
 	return
 }
@@ -181,7 +179,7 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 func (me *Cache) rescan() {
 	me.filled = 0
 	me.items = newLRUItems()
-	me.paths = make(map[string]ItemInfo)
+	me.paths = make(map[key]ItemInfo)
 	err := filepath.Walk(me.root, func(path string, info os.FileInfo, err error) error {
 		if os.IsNotExist(err) {
 			return nil
@@ -197,7 +195,7 @@ func (me *Cache) rescan() {
 			log.Print(err)
 			return nil
 		}
-		me.statItem(path, time.Time{})
+		me.statItem(sanitizePath(path), time.Time{})
 		return nil
 	})
 	if err != nil {
@@ -209,7 +207,7 @@ func (me *Cache) insertItem(i ItemInfo) {
 	me.items.Insert(i)
 }
 
-func (me *Cache) removeInfo(path string) (ret ItemInfo, ok bool) {
+func (me *Cache) removeInfo(path key) (ret ItemInfo, ok bool) {
 	ret, ok = me.paths[path]
 	if !ok {
 		return
@@ -224,7 +222,7 @@ func (me *Cache) removeInfo(path string) (ret ItemInfo, ok bool) {
 
 // Triggers the item for path to be updated. If access is non-zero, set the
 // item's access time to that value, otherwise deduce it appropriately.
-func (me *Cache) statItem(path string, access time.Time) {
+func (me *Cache) statItem(path key, access time.Time) {
 	info, ok := me.removeInfo(path)
 	fi, err := os.Stat(me.realpath(path))
 	if os.IsNotExist(err) {
@@ -252,8 +250,8 @@ func (me *Cache) statItem(path string, access time.Time) {
 	me.paths[path] = info
 }
 
-func (me *Cache) realpath(path string) string {
-	return filepath.Join(me.root, filepath.FromSlash(sanitizePath(path)))
+func (me *Cache) realpath(path key) string {
+	return filepath.Join(me.root, filepath.FromSlash(string(path)))
 }
 
 func (me *Cache) TrimToCapacity() {
@@ -262,11 +260,11 @@ func (me *Cache) TrimToCapacity() {
 	me.trimToCapacity()
 }
 
-func (me *Cache) pruneEmptyDirs(path string) {
+func (me *Cache) pruneEmptyDirs(path key) {
 	pruneEmptyDirs(me.root, me.realpath(path))
 }
 
-func (me *Cache) remove(path string) (err error) {
+func (me *Cache) remove(path key) (err error) {
 	err = os.Remove(me.realpath(path))
 	if os.IsNotExist(err) {
 		err = nil
@@ -287,7 +285,7 @@ func (me *Cache) trimToCapacity() {
 }
 
 func (me *Cache) pathInfo(p string) ItemInfo {
-	return me.paths[p]
+	return me.paths[sanitizePath(p)]
 }
 
 func (me *Cache) Rename(from, to string) (err error) {
@@ -310,7 +308,7 @@ func (me *Cache) Rename(from, to string) (err error) {
 }
 
 func (me *Cache) Stat(path string) (os.FileInfo, error) {
-	return os.Stat(me.realpath(path))
+	return os.Stat(me.realpath(sanitizePath(path)))
 }
 
 func (me *Cache) AsResourceProvider() resource.Provider {
