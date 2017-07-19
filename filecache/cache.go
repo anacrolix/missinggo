@@ -176,18 +176,15 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 			})
 		},
 	}
-	accessed := time.Now()
 	me.mu.Lock()
-	go func() {
-		defer me.mu.Unlock()
-		me.updateItem(key, func(i *ItemInfo, ok bool) bool {
-			if !ok {
-				*i, ok = me.statKey(key)
-			}
-			i.Accessed = accessed
-			return ok
-		})
-	}()
+	defer me.mu.Unlock()
+	me.updateItem(key, func(i *ItemInfo, ok bool) bool {
+		if !ok {
+			*i, ok = me.statKey(key)
+		}
+		i.Accessed = time.Now()
+		return ok
+	})
 	return
 }
 
