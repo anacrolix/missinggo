@@ -2,12 +2,17 @@ package filecache
 
 import (
 	"os"
+	"time"
 
 	"github.com/anacrolix/missinggo"
 )
 
-func (i *ItemInfo) FromFileInfo(fi os.FileInfo, k key) {
-	i.Path = k
+type itemState struct {
+	Accessed time.Time
+	Size     int64
+}
+
+func (i *itemState) FromOSFileInfo(fi os.FileInfo) {
 	i.Size = fi.Size()
 	i.Accessed = missinggo.FileInfoAccessTime(fi)
 	if fi.ModTime().After(i.Accessed) {

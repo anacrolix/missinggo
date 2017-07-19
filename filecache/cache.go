@@ -24,7 +24,7 @@ type Cache struct {
 	capacity int64
 	filled   int64
 	policy   Policy
-	paths    map[key]ItemInfo
+	items    map[key]itemState
 }
 
 type CacheInfo struct {
@@ -34,18 +34,21 @@ type CacheInfo struct {
 }
 
 type ItemInfo struct {
+	Path     key
 	Accessed time.Time
 	Size     int64
-	Path     key
 }
 
-// Calls the function for every item known to the cache. The ItemInfo should
-// not be modified.
+// Calls the function for every item known to be in the cache.
 func (me *Cache) WalkItems(cb func(ItemInfo)) {
 	me.mu.Lock()
 	defer me.mu.Unlock()
-	for _, ii := range me.paths {
-		cb(ii)
+	for k, ii := range me.items {
+		cb(ItemInfo{
+			Path:     k,
+			Accessed: ii.Accessed,
+			Size:     ii.Size,
+		})
 	}
 }
 
@@ -54,7 +57,7 @@ func (me *Cache) Info() (ret CacheInfo) {
 	defer me.mu.Unlock()
 	ret.Capacity = me.capacity
 	ret.Filled = me.filled
-	ret.NumItems = len(me.paths)
+	ret.NumItems = len(me.items)
 	return
 }
 
@@ -159,7 +162,7 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 		onRead: func(n int) {
 			me.mu.Lock()
 			defer me.mu.Unlock()
-			me.updateItem(key, func(i *ItemInfo, ok bool) bool {
+			me.updateItem(key, func(i *itemState, ok bool) bool {
 				i.Accessed = time.Now()
 				return ok
 			})
@@ -167,7 +170,7 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 		afterWrite: func(endOff int64) {
 			me.mu.Lock()
 			defer me.mu.Unlock()
-			me.updateItem(key, func(i *ItemInfo, ok bool) bool {
+			me.updateItem(key, func(i *itemState, ok bool) bool {
 				i.Accessed = time.Now()
 				if endOff > i.Size {
 					i.Size = endOff
@@ -178,7 +181,7 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 	}
 	me.mu.Lock()
 	defer me.mu.Unlock()
-	me.updateItem(key, func(i *ItemInfo, ok bool) bool {
+	me.updateItem(key, func(i *itemState, ok bool) bool {
 		if !ok {
 			*i, ok = me.statKey(key)
 		}
@@ -191,7 +194,7 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 func (me *Cache) rescan() {
 	me.filled = 0
 	me.policy = new(lru)
-	me.paths = make(map[key]ItemInfo)
+	me.items = make(map[key]itemState)
 	err := filepath.Walk(me.root, func(path string, info os.FileInfo, err error) error {
 		if os.IsNotExist(err) {
 			return nil
@@ -208,7 +211,7 @@ func (me *Cache) rescan() {
 			return nil
 		}
 		key := sanitizePath(path)
-		me.updateItem(key, func(i *ItemInfo, ok bool) bool {
+		me.updateItem(key, func(i *itemState, ok bool) bool {
 			if ok {
 				panic("scanned duplicate items")
 			}
@@ -222,7 +225,7 @@ func (me *Cache) rescan() {
 	}
 }
 
-func (me *Cache) statKey(k key) (i ItemInfo, ok bool) {
+func (me *Cache) statKey(k key) (i itemState, ok bool) {
 	fi, err := os.Stat(me.realpath(k))
 	if os.IsNotExist(err) {
 		return
@@ -230,21 +233,21 @@ func (me *Cache) statKey(k key) (i ItemInfo, ok bool) {
 	if err != nil {
 		panic(err)
 	}
-	i.FromFileInfo(fi, k)
+	i.FromOSFileInfo(fi)
 	ok = true
 	return
 }
 
-func (me *Cache) updateItem(k key, u func(*ItemInfo, bool) bool) {
-	ii, ok := me.paths[k]
+func (me *Cache) updateItem(k key, u func(*itemState, bool) bool) {
+	ii, ok := me.items[k]
 	me.filled -= ii.Size
 	if u(&ii, ok) {
 		me.filled += ii.Size
 		me.policy.Used(k, ii.Accessed)
-		me.paths[k] = ii
+		me.items[k] = ii
 	} else {
 		me.policy.Forget(k)
-		delete(me.paths, k)
+		delete(me.items, k)
 	}
 	me.trimToCapacity()
 }
@@ -272,7 +275,7 @@ func (me *Cache) remove(path key) error {
 		return err
 	}
 	me.pruneEmptyDirs(path)
-	me.updateItem(path, func(*ItemInfo, bool) bool {
+	me.updateItem(path, func(*itemState, bool) bool {
 		return false
 	})
 	return nil
@@ -287,8 +290,9 @@ func (me *Cache) trimToCapacity() {
 	}
 }
 
-func (me *Cache) pathInfo(p string) ItemInfo {
-	return me.paths[sanitizePath(p)]
+// TODO: Do I need this?
+func (me *Cache) pathInfo(p string) itemState {
+	return me.items[sanitizePath(p)]
 }
 
 func (me *Cache) Rename(from, to string) (err error) {
@@ -304,12 +308,13 @@ func (me *Cache) Rename(from, to string) (err error) {
 	if err != nil {
 		return
 	}
-	me.updateItem(_from, func(i *ItemInfo, ok bool) bool {
-		if ok {
-			i.Path = _to
-		} else {
-			*i, ok = me.statKey(_to)
-		}
+	// We can do a dance here to copy the state from the old item, but lets
+	// just stat the new item for now.
+	me.updateItem(_from, func(i *itemState, ok bool) bool {
+		return false
+	})
+	me.updateItem(_to, func(i *itemState, ok bool) bool {
+		*i, ok = me.statKey(_to)
 		return ok
 	})
 	return
