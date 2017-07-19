@@ -32,7 +32,7 @@ func handleNewData(w http.ResponseWriter, path string, offset int64, r io.Reader
 	_, err = io.Copy(f, r)
 	if err != nil {
 		log.Print(err)
-		f.Remove()
+		c.Remove(path)
 		http.Error(w, "didn't complete", http.StatusInternalServerError)
 		return true
 	}
