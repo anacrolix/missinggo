@@ -157,6 +157,8 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 		path: key,
 		f:    pproffd.WrapOSFile(f),
 		onRead: func(n int) {
+			me.mu.Lock()
+			defer me.mu.Unlock()
 			me.updateItem(key, func(i *ItemInfo, ok bool) bool {
 				i.Accessed = time.Now()
 				return ok
