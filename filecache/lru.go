@@ -26,10 +26,15 @@ func (me lruKey) Before(other lruKey) bool {
 var _ Policy = (*lru)(nil)
 
 func (me *lru) Choose() (ret policyItemKey) {
+	any := false
 	me.o.Iter(func(i interface{}) bool {
 		ret = i.(lruKey).item
+		any = true
 		return false
 	})
+	if !any {
+		panic("cache empty")
+	}
 	return
 }
 
@@ -38,6 +43,8 @@ func (me *lru) Used(k policyItemKey, at time.Time) {
 		me.o = orderedmap.NewGoogleBTree(func(l, r interface{}) bool {
 			return l.(lruKey).Before(r.(lruKey))
 		})
+	} else {
+		me.o.Unset(me.oKeys[k])
 	}
 	lk := lruKey{k, at}
 	me.o.Set(lk, lk)
@@ -48,7 +55,9 @@ func (me *lru) Used(k policyItemKey, at time.Time) {
 }
 
 func (me *lru) Forget(k policyItemKey) {
-	me.o.Unset(me.oKeys[k])
+	if me.o != nil {
+		me.o.Unset(me.oKeys[k])
+	}
 	delete(me.oKeys, k)
 }
 
