@@ -1,4 +1,4 @@
-package missinggo
+package leaktest
 
 import (
 	"runtime"
