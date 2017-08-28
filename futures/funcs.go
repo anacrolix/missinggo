@@ -27,22 +27,32 @@ func AsCompleted(fs ...*F) <-chan *F {
 	return ret
 }
 
+type delayedState struct {
+	timeout *F
+	added   bool
+}
+
 func AsCompletedDelayed(ctx context.Context, initial []*F, delayed []Delayed) <-chan *F {
 	ret := make(chan *F)
 	go func() {
 		defer close(ret)
-		timeouts := make(map[*F]struct{}, len(delayed))
-		for _, d := range delayed {
-			func(d Delayed) {
-				timeouts[Start(func() (interface{}, error) {
+		var (
+			dss      []delayedState
+			timeouts = map[*F]struct{}{} // Pending timeouts
+		)
+		for i := range delayed {
+			func(i int) {
+				f := Start(func() (interface{}, error) {
 					select {
-					case <-time.After(d.Delay):
-						return d.Fs, nil
+					case <-time.After(delayed[i].Delay):
+						return i, nil
 					case <-ctx.Done():
 						return nil, ctx.Err()
 					}
-				})] = struct{}{}
-			}(d)
+				})
+				timeouts[f] = struct{}{}
+				dss = append(dss, delayedState{timeout: f})
+			}(i)
 		}
 		// Number of pending sends for a future.
 		results := map[*F]int{}
@@ -50,22 +60,38 @@ func AsCompletedDelayed(ctx context.Context, initial []*F, delayed []Delayed) <-
 			results[f]++
 		}
 	start:
-		for f := range AsCompleted(append(
-			func() (ret []*F) {
-				for f, left := range results {
-					for range iter.N(left) {
-						ret = append(ret, f)
-					}
+		resultsSlice := func() (ret []*F) {
+			for f, left := range results {
+				for range iter.N(left) {
+					ret = append(ret, f)
 				}
-				return
-			}(),
+			}
+			return
+		}()
+		if len(resultsSlice) == 0 {
+			for i, ds := range dss {
+				if ds.added {
+					continue
+				}
+				delete(timeouts, ds.timeout)
+				for _, f := range delayed[i].Fs {
+					results[f]++
+				}
+				dss[i].added = true
+				goto start
+			}
+		}
+		for f := range AsCompleted(append(
+			resultsSlice,
 			slices.FromMapKeys(timeouts).([]*F)...,
 		)...) {
 			if _, ok := timeouts[f]; ok {
-				for _, f := range f.MustResult().([]*F) {
+				i := f.MustResult().(int)
+				for _, f := range delayed[i].Fs {
 					results[f]++
 				}
 				delete(timeouts, f)
+				dss[i].added = true
 				goto start
 			}
 			select {
@@ -73,6 +99,9 @@ func AsCompletedDelayed(ctx context.Context, initial []*F, delayed []Delayed) <-
 				results[f]--
 				if results[f] == 0 {
 					delete(results, f)
+				}
+				if len(results) == 0 {
+					goto start
 				}
 			case <-ctx.Done():
 				return
