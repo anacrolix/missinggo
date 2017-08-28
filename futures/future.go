@@ -1,6 +1,9 @@
 package futures
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 func Start(fn func() (interface{}, error)) *F {
 	f := &F{
@@ -13,10 +16,22 @@ func Start(fn func() (interface{}, error)) *F {
 }
 
 type F struct {
+	name   string
 	mu     sync.Mutex
 	result interface{}
 	err    error
 	done   chan struct{}
+}
+
+func (f *F) String() string {
+	if f.name != "" {
+		return f.name
+	}
+	return fmt.Sprintf("future %p", f)
+}
+
+func (f *F) SetName(s string) {
+	f.name = s
 }
 
 func (f *F) Result() (interface{}, error) {
