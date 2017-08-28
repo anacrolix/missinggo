@@ -9,6 +9,8 @@ import (
 	"github.com/bradfitz/iter"
 )
 
+// Sends each future as it completes on the returned chan, closing it when
+// everything has been sent.
 func AsCompleted(fs ...*F) <-chan *F {
 	ret := make(chan *F, len(fs))
 	var wg sync.WaitGroup
@@ -27,6 +29,7 @@ func AsCompleted(fs ...*F) <-chan *F {
 	return ret
 }
 
+// Additional state maintained for each delayed element.
 type delayedState struct {
 	timeout *F
 	added   bool
@@ -60,6 +63,7 @@ func AsCompletedDelayed(ctx context.Context, initial []*F, delayed []Delayed) <-
 			results[f]++
 		}
 	start:
+		// A slice of futures we want to send when they complete.
 		resultsSlice := func() (ret []*F) {
 			for f, left := range results {
 				for range iter.N(left) {
@@ -73,38 +77,52 @@ func AsCompletedDelayed(ctx context.Context, initial []*F, delayed []Delayed) <-
 				if ds.added {
 					continue
 				}
+				// Add this delayed block prematurely.
 				delete(timeouts, ds.timeout)
 				for _, f := range delayed[i].Fs {
 					results[f]++
 				}
 				dss[i].added = true
+				// We need to recompute the results slice.
 				goto start
 			}
 		}
-		for f := range AsCompleted(append(
+		as := AsCompleted(append(
 			resultsSlice,
 			slices.FromMapKeys(timeouts).([]*F)...,
-		)...) {
-			if _, ok := timeouts[f]; ok {
-				i := f.MustResult().(int)
-				for _, f := range delayed[i].Fs {
-					results[f]++
-				}
-				delete(timeouts, f)
-				dss[i].added = true
-				goto start
-			}
+		)...)
+		for {
 			select {
-			case ret <- f:
-				results[f]--
-				if results[f] == 0 {
-					delete(results, f)
-				}
-				if len(results) == 0 {
-					goto start
-				}
 			case <-ctx.Done():
 				return
+			case f, ok := <-as:
+				if !ok {
+					return
+				}
+				if _, ok := timeouts[f]; ok {
+					if ctx.Err() != nil {
+						break
+					}
+					i := f.MustResult().(int)
+					for _, f := range delayed[i].Fs {
+						results[f]++
+					}
+					delete(timeouts, f)
+					dss[i].added = true
+					goto start
+				}
+				select {
+				case ret <- f:
+					results[f]--
+					if results[f] == 0 {
+						delete(results, f)
+					}
+					if len(results) == 0 {
+						goto start
+					}
+				case <-ctx.Done():
+					return
+				}
 			}
 		}
 	}()

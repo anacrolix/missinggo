@@ -80,10 +80,7 @@ func TestAsCompletedDelayedContextCanceled(t *testing.T) {
 	}
 	a(0, 0)
 	cancel()
-	a(1, 1)
-	a(2, 2)
-	a(0, 2)
 	_, ok := <-as
 	assert.False(t, ok)
-	assert.True(t, time.Since(s) < 4*u)
+	assert.True(t, time.Since(s) < 1*u)
 }
