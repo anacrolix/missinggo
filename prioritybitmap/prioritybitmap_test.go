@@ -19,14 +19,14 @@ func TestEmpty(t *testing.T) {
 
 func TestIntBounds(t *testing.T) {
 	var pb PriorityBitmap
-	pb.Set(math.MaxInt32, math.MinInt32)
-	pb.Set(math.MinInt32, math.MaxInt32)
+	assert.True(t, pb.Set(math.MaxInt32, math.MinInt32))
+	assert.True(t, pb.Set(math.MinInt32, math.MaxInt32))
 	assert.EqualValues(t, []interface{}{math.MaxInt32, math.MinInt32}, iter.IterableAsSlice(&pb))
 }
 
 func TestDistinct(t *testing.T) {
 	var pb PriorityBitmap
-	pb.Set(0, 0)
+	assert.True(t, pb.Set(0, 0))
 	pb.Set(1, 1)
 	assert.EqualValues(t, []interface{}{0, 1}, iter.IterableAsSlice(&pb))
 	pb.Set(0, -1)
@@ -57,9 +57,30 @@ func TestRemoveWhileIterating(t *testing.T) {
 	assert.EqualValues(t, []interface{}(nil), iter.ToSlice(it))
 }
 
+func TestMutationResults(t *testing.T) {
+	var pb PriorityBitmap
+	assert.False(t, pb.Remove(1))
+	assert.True(t, pb.Set(1, -1))
+	assert.True(t, pb.Set(1, 2))
+	assert.True(t, pb.Set(2, 2))
+	assert.True(t, pb.Set(2, -1))
+	assert.False(t, pb.Set(1, 2))
+	assert.EqualValues(t, []interface{}{2, 1}, iter.IterableAsSlice(&pb))
+	assert.True(t, pb.Set(1, -1))
+	assert.False(t, pb.Remove(0))
+	assert.True(t, pb.Remove(1))
+	assert.False(t, pb.Remove(0))
+	assert.False(t, pb.Remove(1))
+	assert.True(t, pb.Remove(2))
+	assert.False(t, pb.Remove(2))
+	assert.False(t, pb.Remove(0))
+	assert.True(t, pb.IsEmpty())
+	assert.Len(t, iter.IterableAsSlice(&pb), 0)
+}
+
 func TestDoubleRemove(t *testing.T) {
 	var pb PriorityBitmap
-	pb.Set(0, 0)
-	pb.Remove(0)
-	assert.NotPanics(t, func() { pb.Remove(0) })
+	assert.True(t, pb.Set(0, 0))
+	assert.True(t, pb.Remove(0))
+	assert.False(t, pb.Remove(0))
 }

@@ -16,9 +16,10 @@ var (
 	}
 )
 
+// Maintains set of ints ordered by priority.
 type PriorityBitmap struct {
-	// Protects against unsychronized modifications to bitsets and
 	mu sync.Mutex
+	// From priority to singleton or set of bit indices.
 	om orderedmap.OrderedMap
 	// From bit index to priority
 	priorities map[int]int
@@ -29,24 +30,31 @@ func (me *PriorityBitmap) Clear() {
 	me.priorities = nil
 }
 
-func (me *PriorityBitmap) deleteBit(bit int) {
-	p, ok := me.priorities[bit]
+func (me *PriorityBitmap) deleteBit(bit int) (priority int, ok bool) {
+	priority, ok = me.priorities[bit]
 	if !ok {
 		return
 	}
-	switch v := me.om.Get(p).(type) {
+	switch v := me.om.Get(priority).(type) {
 	case int:
+		if v != bit {
+			panic("invariant broken")
+		}
 	case map[int]struct{}:
+		if _, ok := v[bit]; !ok {
+			panic("invariant broken")
+		}
 		delete(v, bit)
 		if len(v) != 0 {
 			return
 		}
 		bitSets.Put(v)
 	}
-	me.om.Unset(p)
+	me.om.Unset(priority)
 	if me.om.Len() == 0 {
 		me.om = nil
 	}
+	return
 }
 
 func bitLess(l, r interface{}) bool {
@@ -60,8 +68,14 @@ func (me *PriorityBitmap) lazyInit() {
 	me.priorities = make(map[int]int)
 }
 
-func (me *PriorityBitmap) Set(bit int, priority int) {
-	me.deleteBit(bit)
+// return value if changed
+func (me *PriorityBitmap) Set(bit int, priority int) bool {
+	if p, ok := me.priorities[bit]; ok && p == priority {
+		return false
+	}
+	if oldPriority, deleted := me.deleteBit(bit); deleted && oldPriority == priority {
+		panic("should have already returned")
+	}
 	if me.priorities == nil {
 		me.priorities = make(map[int]int)
 	}
@@ -71,8 +85,9 @@ func (me *PriorityBitmap) Set(bit int, priority int) {
 	}
 	_v, ok := me.om.GetOk(priority)
 	if !ok {
+		// No other bits with this priority, set it to a lone int.
 		me.om.Set(priority, bit)
-		return
+		return true
 	}
 	switch v := _v.(type) {
 	case int:
@@ -82,13 +97,18 @@ func (me *PriorityBitmap) Set(bit int, priority int) {
 		me.om.Set(priority, newV)
 	case map[int]struct{}:
 		v[bit] = struct{}{}
+	default:
+		panic(v)
 	}
+	return true
 }
 
-func (me *PriorityBitmap) Remove(bit int) {
+func (me *PriorityBitmap) Remove(bit int) bool {
 	me.mu.Lock()
 	defer me.mu.Unlock()
-	me.deleteBit(bit)
+	if _, ok := me.deleteBit(bit); !ok {
+		return false
+	}
 	delete(me.priorities, bit)
 	if len(me.priorities) == 0 {
 		me.priorities = nil
@@ -96,6 +116,7 @@ func (me *PriorityBitmap) Remove(bit int) {
 	if me.om != nil && me.om.Len() == 0 {
 		me.om = nil
 	}
+	return true
 }
 
 func (me *PriorityBitmap) Iter(f func(value interface{}) bool) {
