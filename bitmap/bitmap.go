@@ -7,6 +7,7 @@ import (
 	"math"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/anacrolix/missinggo/iter"
 )
 
 const MaxInt = -1
@@ -42,9 +43,9 @@ func (me *Bitmap) lazyRB() *roaring.Bitmap {
 	return me.rb
 }
 
-func (me *Bitmap) Iter(f func(interface{}) bool) {
+func (me Bitmap) Iter(cb iter.Callback) {
 	me.IterTyped(func(i int) bool {
-		return f(i)
+		return cb(i)
 	})
 }
 

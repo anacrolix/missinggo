@@ -37,7 +37,7 @@ func TestGroupByNiladicKey(t *testing.T) {
 	gb := GroupBy(StringIterator(s), func(interface{}) interface{} { return nil })
 	gb.Next()
 	var ss []byte
-	g := ToSlice(gb.Value().(Iterator))
+	g := ToSlice(ToFunc(gb.Value().(Iterator)))
 	slices.MakeInto(&ss, g)
 	assert.Equal(t, s, string(ss))
 }
