@@ -3,7 +3,6 @@ package prioritybitmap
 import (
 	"math"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -42,19 +41,6 @@ func TestNextAfterIterFinished(t *testing.T) {
 	assert.True(t, it.Next())
 	assert.False(t, it.Next())
 	assert.False(t, it.Next())
-}
-
-func TestRemoveWhileIterating(t *testing.T) {
-	var pb PriorityBitmap
-	pb.Set(0, 0)
-	pb.Set(1, 1)
-	it := iter.NewIterator(&pb)
-	go it.Stop()
-	pb.Remove(0)
-	time.Sleep(time.Millisecond)
-	// This should return an empty list, as the iterator was stopped before
-	// Next was called.
-	assert.EqualValues(t, []interface{}(nil), iter.ToSlice(it))
 }
 
 func TestMutationResults(t *testing.T) {
