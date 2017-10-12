@@ -84,11 +84,11 @@ func (me *Bitmap) AddRange(begin, end int) {
 	me.lazyRB().AddRange(uint64(begin), uint64(end))
 }
 
-func (me *Bitmap) Remove(i int) {
+func (me *Bitmap) Remove(i int) bool {
 	if me.rb == nil {
-		return
+		return false
 	}
-	me.rb.Remove(uint32(i))
+	return me.rb.CheckedRemove(uint32(i))
 }
 
 func (me *Bitmap) Union(other *Bitmap) {
