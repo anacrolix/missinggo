@@ -91,7 +91,7 @@ func (me *Bitmap) Remove(i int) bool {
 	return me.rb.CheckedRemove(uint32(i))
 }
 
-func (me *Bitmap) Union(other *Bitmap) {
+func (me *Bitmap) Union(other Bitmap) {
 	me.lazyRB().Or(other.lazyRB())
 }
 
