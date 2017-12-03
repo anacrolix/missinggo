@@ -14,3 +14,14 @@ func Max(_less interface{}, vals ...interface{}) interface{} {
 	}
 	return ret.Interface()
 }
+
+func MinInt(first interface{}, rest ...interface{}) int64 {
+	ret := reflect.ValueOf(first).Int()
+	for _, _i := range rest {
+		i := reflect.ValueOf(_i).Int()
+		if i < ret {
+			ret = i
+		}
+	}
+	return ret
+}
