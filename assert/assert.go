@@ -1,6 +1,7 @@
 package assert
 
 import (
+	"database/sql"
 	"reflect"
 
 	"fmt"
@@ -31,5 +32,19 @@ func Equal(x, y interface{}) {
 func StrictlyEqual(x, y interface{}) {
 	if x != y {
 		panic(fmt.Sprintf("%s != %s"))
+	}
+}
+
+func OneRowAffected(r sql.Result) {
+	count, err := r.RowsAffected()
+	Nil(err)
+	if count != 1 {
+		panic(count)
+	}
+}
+
+func True(b bool) {
+	if !b {
+		panic(b)
 	}
 }
