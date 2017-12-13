@@ -15,7 +15,7 @@ type refTest struct {
 	t    *testing.T
 }
 
-func (me refTest) run() {
+func (me *refTest) run() {
 	me.objs = make(map[*object]struct{})
 	var (
 		mu     sync.Mutex
@@ -59,8 +59,8 @@ type object struct {
 }
 
 func Test(t *testing.T) {
-	refTest{
+	(&refTest{
 		key: 3,
 		t:   t,
-	}.run()
+	}).run()
 }

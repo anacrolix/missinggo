@@ -31,7 +31,7 @@ func Equal(x, y interface{}) {
 
 func StrictlyEqual(x, y interface{}) {
 	if x != y {
-		panic(fmt.Sprintf("%s != %s"))
+		panic(fmt.Sprintf("%s != %s", x, y))
 	}
 }
 
