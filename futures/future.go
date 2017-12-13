@@ -15,6 +15,12 @@ func Start(fn func() (interface{}, error)) *F {
 	return f
 }
 
+func StartNoError(fn func() interface{}) *F {
+	return Start(func() (interface{}, error) {
+		return fn(), nil
+	})
+}
+
 type F struct {
 	name   string
 	mu     sync.Mutex
