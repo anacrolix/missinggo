@@ -48,3 +48,11 @@ func True(b bool) {
 		panic(b)
 	}
 }
+
+var Ok = True
+
+func False(b bool) {
+	if b {
+		panic(b)
+	}
+}
