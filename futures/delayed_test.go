@@ -12,7 +12,7 @@ import (
 
 // Delay unit, high enough that system slowness doesn't affect timing, but low
 // enough to ensure tests are fast.
-const u = 10 * time.Millisecond
+const u = 20 * time.Millisecond
 
 func TestAsCompletedDelayed(t *testing.T) {
 	t.Parallel()
