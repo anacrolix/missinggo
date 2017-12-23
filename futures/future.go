@@ -2,6 +2,7 @@ package futures
 
 import (
 	"fmt"
+	"reflect"
 	"sync"
 )
 
@@ -65,4 +66,10 @@ func (f *F) setResult(result interface{}, err error) {
 	f.result = result
 	f.err = err
 	close(f.done)
+}
+
+func (f *F) ScanResult(res interface{}) error {
+	_res, err := f.Result()
+	reflect.ValueOf(res).Elem().Set(reflect.ValueOf(_res))
+	return err
 }

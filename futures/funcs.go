@@ -35,6 +35,11 @@ type delayedState struct {
 	added   bool
 }
 
+// Returns futures as they complete. Delayed futures are not released until
+// their timeout has passed, or all prior delayed futures, and the initial set
+// have completed. One use case is to prefer the value in some futures over
+// others, such as hitting several origin servers where some are better
+// informed than others.
 func AsCompletedDelayed(ctx context.Context, initial []*F, delayed []Delayed) <-chan *F {
 	ret := make(chan *F)
 	go func() {
