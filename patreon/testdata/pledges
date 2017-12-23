@@ -1,0 +1,331 @@
+{
+    "data": [
+        {
+            "attributes": {
+                "amount_cents": 200,
+                "created_at": "2017-06-25T06:31:08.327895+00:00",
+                "declined_since": null,
+                "patron_pays_fees": false,
+                "pledge_cap_cents": 200
+            },
+            "id": "6481585",
+            "relationships": {
+                "address": {
+                    "data": null
+                },
+                "creator": {
+                    "data": {
+                        "id": "6126463",
+                        "type": "user"
+                    },
+                    "links": {
+                        "related": "https://api.patreon.com/user/6126463"
+                    }
+                },
+                "patron": {
+                    "data": {
+                        "id": "6649264",
+                        "type": "user"
+                    },
+                    "links": {
+                        "related": "https://api.patreon.com/user/6649264"
+                    }
+                },
+                "reward": {
+                    "data": {
+                        "id": "1683378",
+                        "type": "reward"
+                    },
+                    "links": {
+                        "related": "https://api.patreon.com/rewards/1683378"
+                    }
+                }
+            },
+            "type": "pledge"
+        }
+    ],
+    "included": [
+        {
+            "attributes": {
+                "about": null,
+                "created": "2017-06-25T06:27:33+00:00",
+                "email": "yonhyaro@gmail.com",
+                "facebook": null,
+                "first_name": "Ben",
+                "full_name": "Ben Idris",
+                "gender": 0,
+                "image_url": "https://c3.patreon.com/2/patreon-user/oTXlvlk326g1M0aDepVz1WMmE4Tq6eGxlQHmDIeuYA5MAuPUz3oDar8XiAYsJTsF.jpeg?t=2145916800&w=400&v=oERJD4kyEAN7aSeOUX8Ki0p1iyVIbKcJ3pudh7QnZK0%3D",
+                "is_email_verified": true,
+                "last_name": "Idris",
+                "social_connections": {
+                    "deviantart": null,
+                    "discord": null,
+                    "facebook": null,
+                    "spotify": null,
+                    "twitch": null,
+                    "twitter": null,
+                    "youtube": null
+                },
+                "thumb_url": "https://c3.patreon.com/2/patreon-user/oTXlvlk326g1M0aDepVz1WMmE4Tq6eGxlQHmDIeuYA5MAuPUz3oDar8XiAYsJTsF.jpeg?h=100&t=2145916800&w=100&v=jXL0mDWCvzTCWk544GNyJ7IgoTIJR2gGAuLnJKcTnAI%3D",
+                "twitch": null,
+                "twitter": null,
+                "url": "https://www.patreon.com/user?u=6649264",
+                "vanity": null,
+                "youtube": null
+            },
+            "id": "6649264",
+            "relationships": {
+                "campaign": {
+                    "data": null
+                }
+            },
+            "type": "user"
+        },
+        {
+            "attributes": {
+                "amount": 200,
+                "amount_cents": 200,
+                "created_at": "2017-05-12T13:31:36.623424+00:00",
+                "deleted_at": null,
+                "description": "<ul><li>Elevated quota on test servers</li></ul>",
+                "discord_role_ids": null,
+                "edited_at": "2017-06-13T13:09:39.303442+00:00",
+                "image_url": null,
+                "patron_count": 1,
+                "post_count": null,
+                "published": true,
+                "published_at": "2017-05-12T13:31:36.623424+00:00",
+                "remaining": 19,
+                "requires_shipping": false,
+                "title": "Fan",
+                "unpublished_at": null,
+                "url": "/bePatron?c=925561&rid=1683378",
+                "user_limit": 20
+            },
+            "id": "1683378",
+            "relationships": {
+                "campaign": {
+                    "data": {
+                        "id": "925561",
+                        "type": "campaign"
+                    },
+                    "links": {
+                        "related": "https://api.patreon.com/campaigns/925561"
+                    }
+                },
+                "creator": {
+                    "data": {
+                        "id": "6126463",
+                        "type": "user"
+                    },
+                    "links": {
+                        "related": "https://api.patreon.com/user/6126463"
+                    }
+                }
+            },
+            "type": "reward"
+        },
+        {
+            "attributes": {
+                "about": "",
+                "created": "2017-05-12T12:49:31+00:00",
+                "discord_id": null,
+                "email": "anacrolix@gmail.com",
+                "facebook": null,
+                "facebook_id": "10155425587018447",
+                "first_name": "Matt",
+                "full_name": "Matt Joiner",
+                "gender": 0,
+                "has_password": false,
+                "image_url": "https://c3.patreon.com/2/patreon-user/wS20eHsYaLMqJeDyL5wyK0egvcXDRNdT28JvjeREJ5T80te19Cmn1YZxZyzd2qab.jpeg?t=2145916800&w=400&v=506YL5JlU7aaQH-QyEaRXyWoXFs4ia-vcSjjZuv-dXY%3D",
+                "is_deleted": false,
+                "is_email_verified": true,
+                "is_nuked": false,
+                "is_suspended": false,
+                "last_name": "Joiner",
+                "social_connections": {
+                    "deviantart": null,
+                    "discord": null,
+                    "facebook": null,
+                    "spotify": null,
+                    "twitch": null,
+                    "twitter": null,
+                    "youtube": null
+                },
+                "thumb_url": "https://c3.patreon.com/2/patreon-user/wS20eHsYaLMqJeDyL5wyK0egvcXDRNdT28JvjeREJ5T80te19Cmn1YZxZyzd2qab.jpeg?h=100&t=2145916800&w=100&v=SI72bzI4XB5mX0dyfqeZ-Nn4BNTz9FYRSgZ8pLipARg%3D",
+                "twitch": null,
+                "twitter": null,
+                "url": "https://www.patreon.com/anacrolix",
+                "vanity": "anacrolix",
+                "youtube": null
+            },
+            "id": "6126463",
+            "relationships": {
+                "campaign": {
+                    "data": {
+                        "id": "925561",
+                        "type": "campaign"
+                    },
+                    "links": {
+                        "related": "https://api.patreon.com/campaigns/925561"
+                    }
+                }
+            },
+            "type": "user"
+        },
+        {
+            "attributes": {
+                "created_at": "2017-05-12T12:49:39+00:00",
+                "creation_count": 1,
+                "creation_name": "useful websites and technologies",
+                "discord_server_id": null,
+                "display_patron_goals": false,
+                "earnings_visibility": "private",
+                "image_small_url": null,
+                "image_url": null,
+                "is_charged_immediately": false,
+                "is_monthly": true,
+                "is_nsfw": true,
+                "is_plural": false,
+                "main_video_embed": null,
+                "main_video_url": null,
+                "one_liner": null,
+                "outstanding_payment_amount_cents": 0,
+                "patron_count": 1,
+                "pay_per_name": "month",
+                "pledge_sum": 180,
+                "pledge_url": "/bePatron?c=925561",
+                "published_at": "2017-06-13T05:35:54+00:00",
+                "summary": null,
+                "thanks_embed": null,
+                "thanks_msg": "Thank you for helping me pursue my interests. I hope you enjoy the results of my research.",
+                "thanks_video_url": null
+            },
+            "id": "925561",
+            "relationships": {
+                "creator": {
+                    "data": {
+                        "id": "6126463",
+                        "type": "user"
+                    },
+                    "links": {
+                        "related": "https://api.patreon.com/user/6126463"
+                    }
+                },
+                "goals": {
+                    "data": [
+                        {
+                            "id": "866143",
+                            "type": "goal"
+                        },
+                        {
+                            "id": "866144",
+                            "type": "goal"
+                        }
+                    ]
+                },
+                "rewards": {
+                    "data": [
+                        {
+                            "id": "-1",
+                            "type": "reward"
+                        },
+                        {
+                            "id": "0",
+                            "type": "reward"
+                        },
+                        {
+                            "id": "1683378",
+                            "type": "reward"
+                        }
+                    ]
+                }
+            },
+            "type": "campaign"
+        },
+        {
+            "attributes": {
+                "amount": 0,
+                "amount_cents": 0,
+                "created_at": null,
+                "description": "Everyone",
+                "remaining": 0,
+                "requires_shipping": false,
+                "type": "reward",
+                "url": null,
+                "user_limit": null
+            },
+            "id": "-1",
+            "relationships": {
+                "creator": {
+                    "data": {
+                        "id": "6126463",
+                        "type": "user"
+                    },
+                    "links": {
+                        "related": "https://api.patreon.com/user/6126463"
+                    }
+                }
+            },
+            "type": "reward"
+        },
+        {
+            "attributes": {
+                "amount": 1,
+                "amount_cents": 1,
+                "created_at": null,
+                "description": "Patrons Only",
+                "remaining": 0,
+                "requires_shipping": false,
+                "type": "reward",
+                "url": null,
+                "user_limit": null
+            },
+            "id": "0",
+            "relationships": {
+                "creator": {
+                    "data": {
+                        "id": "6126463",
+                        "type": "user"
+                    },
+                    "links": {
+                        "related": "https://api.patreon.com/user/6126463"
+                    }
+                }
+            },
+            "type": "reward"
+        },
+        {
+            "attributes": {
+                "amount": 2000,
+                "amount_cents": 2000,
+                "completed_percentage": 9,
+                "created_at": "2017-06-13T05:41:54+00:00",
+                "description": "Cover minimal server costs",
+                "reached_at": null,
+                "title": ""
+            },
+            "id": "866143",
+            "type": "goal"
+        },
+        {
+            "attributes": {
+                "amount": 5000,
+                "amount_cents": 5000,
+                "completed_percentage": 3,
+                "created_at": "2017-06-13T05:41:54+00:00",
+                "description": "Improve webserver latency",
+                "reached_at": null,
+                "title": ""
+            },
+            "id": "866144",
+            "type": "goal"
+        }
+    ],
+    "links": {
+        "first": "https://api.patreon.com/oauth2/api/campaigns/925561/pledges?page%5Bcount%5D=10&sort=created"
+    },
+    "meta": {
+        "count": 1
+    }
+}
