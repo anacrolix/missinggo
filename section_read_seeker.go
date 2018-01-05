@@ -3,7 +3,6 @@ package missinggo
 import (
 	"fmt"
 	"io"
-	"os"
 )
 
 type sectionReadSeeker struct {
@@ -18,7 +17,7 @@ func NewSectionReadSeeker(base io.ReadSeeker, off, size int64) (ret io.ReadSeeke
 		off:  off,
 		size: size,
 	}
-	seekOff, err := ret.Seek(0, os.SEEK_SET)
+	seekOff, err := ret.Seek(0, io.SeekStart)
 	if err != nil {
 		panic(err)
 	}
@@ -30,12 +29,12 @@ func NewSectionReadSeeker(base io.ReadSeeker, off, size int64) (ret io.ReadSeeke
 
 func (me *sectionReadSeeker) Seek(off int64, whence int) (ret int64, err error) {
 	switch whence {
-	case os.SEEK_SET:
+	case io.SeekStart:
 		off += me.off
-	case os.SEEK_CUR:
-	case os.SEEK_END:
+	case io.SeekCurrent:
+	case io.SeekEnd:
 		off += me.off + me.size
-		whence = os.SEEK_SET
+		whence = io.SeekStart
 	default:
 		err = fmt.Errorf("unhandled whence: %d", whence)
 		return
@@ -46,7 +45,7 @@ func (me *sectionReadSeeker) Seek(off int64, whence int) (ret int64, err error) 
 }
 
 func (me *sectionReadSeeker) Read(b []byte) (n int, err error) {
-	off, err := me.Seek(0, os.SEEK_CUR)
+	off, err := me.Seek(0, io.SeekCurrent)
 	if err != nil {
 		return
 	}
