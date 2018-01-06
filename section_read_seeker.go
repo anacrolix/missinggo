@@ -1,6 +1,7 @@
 package missinggo
 
 import (
+	"context"
 	"fmt"
 	"io"
 )
@@ -10,8 +11,13 @@ type sectionReadSeeker struct {
 	off, size int64
 }
 
+type ReadSeekContexter interface {
+	io.ReadSeeker
+	ReadContexter
+}
+
 // Returns a ReadSeeker on a section of another ReadSeeker.
-func NewSectionReadSeeker(base io.ReadSeeker, off, size int64) (ret io.ReadSeeker) {
+func NewSectionReadSeeker(base io.ReadSeeker, off, size int64) (ret ReadSeekContexter) {
 	ret = &sectionReadSeeker{
 		base: base,
 		off:  off,
@@ -44,18 +50,26 @@ func (me *sectionReadSeeker) Seek(off int64, whence int) (ret int64, err error) 
 	return
 }
 
-func (me *sectionReadSeeker) Read(b []byte) (n int, err error) {
+func (me *sectionReadSeeker) ReadContext(ctx context.Context, b []byte) (int, error) {
 	off, err := me.Seek(0, io.SeekCurrent)
 	if err != nil {
-		return
+		return 0, err
 	}
 	left := me.size - off
 	if left <= 0 {
-		err = io.EOF
-		return
+		return 0, io.EOF
 	}
-	if int64(len(b)) > left {
-		b = b[:left]
+	b = LimitLen(b, left)
+	if rc, ok := me.base.(ReadContexter); ok {
+		return rc.ReadContext(ctx, b)
+	}
+	if ctx != context.Background() {
+		// Can't handle cancellation.
+		panic(ctx)
 	}
 	return me.base.Read(b)
+}
+
+func (me *sectionReadSeeker) Read(b []byte) (int, error) {
+	return me.ReadContext(context.Background(), b)
 }
