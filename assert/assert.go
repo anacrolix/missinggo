@@ -56,3 +56,9 @@ func False(b bool) {
 		panic(b)
 	}
 }
+
+func Zero(x interface{}) {
+	if x != reflect.Zero(reflect.TypeOf(x)).Interface() {
+		panic(x)
+	}
+}
