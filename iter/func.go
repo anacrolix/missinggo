@@ -1,6 +1,6 @@
 package iter
 
-type Callback func(interface{}) bool
+type Callback func(value interface{}) (more bool)
 
 type Func func(Callback)
 
