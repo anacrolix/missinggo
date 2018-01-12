@@ -5,6 +5,7 @@ package prioritybitmap
 import (
 	"sync"
 
+	"github.com/anacrolix/missinggo/bitmap"
 	"github.com/anacrolix/missinggo/iter"
 	"github.com/anacrolix/missinggo/orderedmap"
 )
@@ -24,6 +25,17 @@ type PriorityBitmap struct {
 	om orderedmap.OrderedMap
 	// From bit index to priority
 	priorities map[int]int
+}
+
+var _ bitmap.Interface = (*PriorityBitmap)(nil)
+
+func (me *PriorityBitmap) Contains(bit int) bool {
+	_, ok := me.priorities[bit]
+	return ok
+}
+
+func (me *PriorityBitmap) Len() int {
+	return len(me.priorities)
 }
 
 func (me *PriorityBitmap) Clear() {

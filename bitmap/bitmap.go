@@ -12,6 +12,10 @@ import (
 
 const MaxInt = -1
 
+type Interface interface {
+	Len() int
+}
+
 // Bitmaps store the existence of values in [0,math.MaxUint32] more
 // efficiently than []bool. The empty value starts with no bits set.
 type Bitmap struct {
