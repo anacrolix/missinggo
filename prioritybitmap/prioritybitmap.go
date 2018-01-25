@@ -170,3 +170,9 @@ func (me *PriorityBitmap) IsEmpty() bool {
 	}
 	return me.om.Len() == 0
 }
+
+// ok is false if the bit is not set.
+func (me *PriorityBitmap) GetPriority(bit int) (prio int, ok bool) {
+	prio, ok = me.priorities[bit]
+	return
+}
