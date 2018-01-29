@@ -156,3 +156,7 @@ func (me *Bitmap) RemoveRange(begin, end int) *Bitmap {
 	me.rb.RemoveRange(uint64(begin), uint64(end))
 	return me
 }
+
+func (me Bitmap) IsEmpty() bool {
+	return me.rb == nil || me.rb.IsEmpty()
+}
