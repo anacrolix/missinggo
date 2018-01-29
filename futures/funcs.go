@@ -41,7 +41,13 @@ type delayedState struct {
 // others, such as hitting several origin servers where some are better
 // informed than others.
 func AsCompletedDelayed(ctx context.Context, initial []*F, delayed []Delayed) <-chan *F {
-	ret := make(chan *F)
+	ret := make(chan *F, func() int {
+		l := len(initial)
+		for _, d := range delayed {
+			l += len(d.Fs)
+		}
+		return l
+	}())
 	go func() {
 		defer close(ret)
 		var (
