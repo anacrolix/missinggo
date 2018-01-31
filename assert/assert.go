@@ -2,9 +2,8 @@ package assert // import "github.com/anacrolix/missinggo/assert"
 
 import (
 	"database/sql"
-	"reflect"
-
 	"fmt"
+	"reflect"
 )
 
 func Nil(x interface{}) {

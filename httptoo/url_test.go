@@ -2,10 +2,9 @@ package httptoo
 
 import (
 	"net/url"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"testing"
 )
 
 func TestAppendURL(t *testing.T) {

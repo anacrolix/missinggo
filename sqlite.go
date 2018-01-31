@@ -2,7 +2,6 @@ package missinggo
 
 import (
 	"database/sql"
-
 	"time"
 )
 

@@ -7,6 +7,7 @@ import (
 	"math"
 
 	"github.com/RoaringBitmap/roaring"
+
 	"github.com/anacrolix/missinggo/iter"
 )
 
