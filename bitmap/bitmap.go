@@ -23,6 +23,8 @@ type Bitmap struct {
 	rb *roaring.Bitmap
 }
 
+var ToEnd int = -1
+
 // The number of set bits in the bitmap. Also known as cardinality.
 func (me *Bitmap) Len() int {
 	if me.rb == nil {
@@ -154,7 +156,11 @@ func (me *Bitmap) RemoveRange(begin, end int) *Bitmap {
 	if me.rb == nil {
 		return me
 	}
-	me.rb.RemoveRange(uint64(begin), uint64(end))
+	rangeEnd := uint64(end)
+	if end == ToEnd {
+		rangeEnd = 0x100000000
+	}
+	me.rb.RemoveRange(uint64(begin), rangeEnd)
 	return me
 }
 
