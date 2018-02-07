@@ -4,7 +4,9 @@ import (
 	"math"
 	"testing"
 
+	"github.com/RoaringBitmap/roaring"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/anacrolix/missinggo/iter"
 	"github.com/anacrolix/missinggo/slices"
@@ -90,4 +92,18 @@ func TestLimits(t *testing.T) {
 	bm.Add(-1)
 	assert.EqualValues(t, 1, bm.Len())
 	assert.EqualValues(t, []int{MaxInt}, bm.ToSortedSlice())
+}
+
+func TestRoaringRangeEnd(t *testing.T) {
+	r := roaring.New()
+	r.Add(roaring.MaxUint32)
+	require.EqualValues(t, 1, r.GetCardinality())
+	r.RemoveRange(0, roaring.MaxUint32)
+	assert.EqualValues(t, 1, r.GetCardinality())
+	r.RemoveRange(0, math.MaxUint64)
+	assert.EqualValues(t, 1, r.GetCardinality())
+	r.RemoveRange(0, 0x100000001)
+	assert.EqualValues(t, 1, r.GetCardinality())
+	r.RemoveRange(0, 0x100000000)
+	assert.EqualValues(t, 0, r.GetCardinality())
 }
