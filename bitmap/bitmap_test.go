@@ -78,11 +78,11 @@ func TestRemoveRange(t *testing.T) {
 	var bm Bitmap
 	bm.AddRange(3, 12)
 	assert.EqualValues(t, 9, bm.Len())
-	bm.RemoveRange(14, -1)
+	bm.RemoveRange(14, RangeEnd)
 	assert.EqualValues(t, 9, bm.Len())
 	bm.RemoveRange(2, 5)
 	assert.EqualValues(t, 7, bm.Len())
-	bm.RemoveRange(10, -1)
+	bm.RemoveRange(10, RangeEnd)
 	assert.EqualValues(t, 5, bm.Len())
 }
 
@@ -91,19 +91,13 @@ func TestLimits(t *testing.T) {
 	assert.Panics(t, func() { bm.Add(math.MaxInt64) })
 	bm.Add(-1)
 	assert.EqualValues(t, 1, bm.Len())
-	assert.EqualValues(t, []int{MaxInt}, bm.ToSortedSlice())
+	assert.EqualValues(t, []int{-1}, bm.ToSortedSlice())
 }
 
 func TestRoaringRangeEnd(t *testing.T) {
 	r := roaring.New()
 	r.Add(roaring.MaxUint32)
 	require.EqualValues(t, 1, r.GetCardinality())
-	r.RemoveRange(0, roaring.MaxUint32)
-	assert.EqualValues(t, 1, r.GetCardinality())
-	r.RemoveRange(0, math.MaxUint64)
-	assert.EqualValues(t, 1, r.GetCardinality())
-	r.RemoveRange(0, 0x100000001)
-	assert.EqualValues(t, 1, r.GetCardinality())
-	r.RemoveRange(0, 0x100000000)
+	r.RemoveRange(0, RangeEnd)
 	assert.EqualValues(t, 0, r.GetCardinality())
 }
