@@ -101,9 +101,5 @@ func TestRoaringRangeEnd(t *testing.T) {
 	r.RemoveRange(0, roaring.MaxUint32)
 	assert.EqualValues(t, 1, r.GetCardinality())
 	r.RemoveRange(0, math.MaxUint64)
-	assert.EqualValues(t, 1, r.GetCardinality())
-	r.RemoveRange(0, 0x100000001)
-	assert.EqualValues(t, 1, r.GetCardinality())
-	r.RemoveRange(0, 0x100000000)
 	assert.EqualValues(t, 0, r.GetCardinality())
 }
