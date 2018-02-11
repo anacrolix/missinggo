@@ -24,7 +24,7 @@ func Equal(x, y interface{}) {
 	}
 	yAsXType := reflect.ValueOf(y).Convert(reflect.TypeOf(x)).Interface()
 	if !reflect.DeepEqual(x, yAsXType) {
-		panic(fmt.Sprintf("%s != %s", x, y))
+		panic(fmt.Sprintf("%v != %v", x, y))
 	}
 }
 
