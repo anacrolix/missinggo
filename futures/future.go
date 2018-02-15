@@ -41,6 +41,12 @@ func (f *F) SetName(s string) {
 	f.name = s
 }
 
+func (f *F) Err() error {
+	<-f.done
+	return f.err
+}
+
+// TODO: Just return value.
 func (f *F) Result() (interface{}, error) {
 	<-f.done
 	f.mu.Lock()
