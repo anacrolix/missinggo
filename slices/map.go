@@ -35,6 +35,7 @@ func FromMapKeys(m interface{}) interface{} {
 	return outValue.Interface()
 }
 
+// f: (T)T, input: []T, outout: []T
 func Map(f, input interface{}) interface{} {
 	inputValue := reflect.ValueOf(input)
 	funcValue := reflect.ValueOf(f)
