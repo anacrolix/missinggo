@@ -1,4 +1,4 @@
-package assert // import "github.com/anacrolix/missinggo/assert"
+package expect // import "github.com/anacrolix/missinggo/expect"
 
 import (
 	"database/sql"
