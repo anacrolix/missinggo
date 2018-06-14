@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"testing"
 
+	_ "github.com/anacrolix/envpprof"
+
 	"github.com/bradfitz/iter"
 )
 
