@@ -23,16 +23,16 @@ func init() {
 
 func WriteEventsTable(w io.Writer) {
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-	fmt.Fprint(tw, "description\tcount\tmin\tmean\tmax\n")
+	fmt.Fprint(tw, "description\ttotal\tcount\tmin\tmean\tmax\n")
 	type t struct {
 		d string
-		e *Event
+		e Event
 	}
 	mu.RLock()
 	es := make([]t, 0, len(events))
 	for d, e := range events {
 		e.Mu.RLock()
-		es = append(es, t{d, e})
+		es = append(es, t{d, *e})
 		e.Mu.RUnlock()
 	}
 	mu.RUnlock()
@@ -41,7 +41,7 @@ func WriteEventsTable(w io.Writer) {
 	})
 	for _, el := range es {
 		e := el.e
-		fmt.Fprintf(tw, "%s\t%d\t%s\t%s\t%s\n", el.d, e.Count, e.Min, e.MeanTime(), e.Max)
+		fmt.Fprintf(tw, "%s\t%v\t%v\t%v\t%v\t%v\n", el.d, e.Total, e.Count, e.Min, e.MeanTime(), e.Max)
 	}
 	tw.Flush()
 }
