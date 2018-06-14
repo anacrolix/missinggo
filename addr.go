@@ -24,6 +24,9 @@ func AddrPort(addr net.Addr) int {
 }
 
 func AddrIP(addr net.Addr) net.IP {
+	if addr == nil {
+		return nil
+	}
 	switch raw := addr.(type) {
 	case *net.UDPAddr:
 		return raw.IP
