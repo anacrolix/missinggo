@@ -87,7 +87,8 @@ func (t *Timer) addDuration(desc string, d time.Duration) {
 		mu.Lock()
 		e = events[desc]
 		if e == nil {
-			e = new(event)
+			e = new(Event)
+			e.Init()
 			events[desc] = e
 		}
 		mu.Unlock()

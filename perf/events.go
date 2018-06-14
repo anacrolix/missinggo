@@ -11,7 +11,7 @@ import (
 
 var (
 	mu     sync.RWMutex
-	events = map[string]*event{}
+	events = map[string]*Event{}
 )
 
 func init() {
@@ -26,22 +26,22 @@ func WriteEventsTable(w io.Writer) {
 	fmt.Fprint(tw, "description\tcount\tmin\tmean\tmax\n")
 	type t struct {
 		d string
-		e *event
+		e *Event
 	}
 	mu.RLock()
 	es := make([]t, 0, len(events))
 	for d, e := range events {
-		e.mu.RLock()
+		e.Mu.RLock()
 		es = append(es, t{d, e})
-		defer e.mu.RUnlock()
+		e.Mu.RUnlock()
 	}
 	mu.RUnlock()
 	sort.Slice(es, func(i, j int) bool {
-		return es[i].e.mean() < es[j].e.mean()
+		return es[i].e.MeanTime() < es[j].e.MeanTime()
 	})
 	for _, el := range es {
 		e := el.e
-		fmt.Fprintf(tw, "%s\t%d\t%s\t%s\t%s\n", el.d, e.count, e.min, e.mean(), e.max)
+		fmt.Fprintf(tw, "%s\t%d\t%s\t%s\t%s\n", el.d, e.Count, e.Min, e.MeanTime(), e.Max)
 	}
 	tw.Flush()
 }

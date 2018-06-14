@@ -1,31 +1,38 @@
 package perf
 
 import (
+	"math"
 	"sync"
 	"time"
 )
 
-type event struct {
-	mu    sync.RWMutex
-	count int64
-	total time.Duration
-	min   time.Duration
-	max   time.Duration
+type Event struct {
+	Mu    sync.RWMutex
+	Count int64
+	Total time.Duration
+	Min   time.Duration
+	Max   time.Duration
 }
 
-func (e *event) Add(t time.Duration) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	if t > e.max {
-		e.max = t
+func (e *Event) Add(t time.Duration) {
+	e.Mu.Lock()
+	defer e.Mu.Unlock()
+	if t > e.Max {
+		e.Max = t
 	}
-	if e.min == 0 || t < e.min {
-		e.min = t
+	if t < e.Min {
+		e.Min = t
 	}
-	e.count++
-	e.total += t
+	e.Count++
+	e.Total += t
 }
 
-func (e *event) mean() time.Duration {
-	return e.total / time.Duration(e.count)
+func (e *Event) MeanTime() time.Duration {
+	e.Mu.RLock()
+	defer e.Mu.RUnlock()
+	return e.Total / time.Duration(e.Count)
+}
+
+func (e *Event) Init() {
+	e.Min = math.MaxInt64
 }
