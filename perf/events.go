@@ -37,7 +37,7 @@ func WriteEventsTable(w io.Writer) {
 	}
 	mu.RUnlock()
 	sort.Slice(es, func(i, j int) bool {
-		return es[i].e.MeanTime() < es[j].e.MeanTime()
+		return es[i].e.Total > es[j].e.Total
 	})
 	for _, el := range es {
 		e := el.e
