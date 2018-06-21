@@ -16,7 +16,14 @@ func ScopeTimerOk(ok *bool) func() {
 
 func ScopeTimerErr(err *error) func() {
 	t := NewTimer(CallerName(1))
-	return func() { t.MarkErr(*err) }
+	return func() {
+		r := recover()
+		if r != nil {
+			t.Mark("panic")
+			panic(r)
+		}
+		t.MarkErr(*err)
+	}
 }
 
 func CallerName(skip int) timerOpt {
