@@ -11,3 +11,12 @@ import (
 func TestGetTestName(t *testing.T) {
 	assert.EqualValues(t, "TestGetTestName", GetTestName())
 }
+
+func TestGetSubtestName(t *testing.T) {
+	t.Run("hello", func(t *testing.T) {
+		assert.Contains(t, "TestGetSubtestName", GetTestName())
+	})
+	t.Run("world", func(t *testing.T) {
+		assert.Contains(t, "TestGetSubtestName", GetTestName())
+	})
+}
