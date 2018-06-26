@@ -13,6 +13,8 @@ import (
 
 const MaxInt = -1
 
+type BitIndex = int
+
 type Interface interface {
 	Len() int
 }
@@ -70,13 +72,13 @@ func (me Bitmap) IterTyped(f func(int) bool) bool {
 	return true
 }
 
-func checkInt(i int) {
+func checkInt(i BitIndex) {
 	if i < math.MinInt32 || i > math.MaxInt32 {
 		panic("out of bounds")
 	}
 }
 
-func (me *Bitmap) Add(is ...int) {
+func (me *Bitmap) Add(is ...BitIndex) {
 	rb := me.lazyRB()
 	for _, i := range is {
 		checkInt(i)
@@ -84,14 +86,14 @@ func (me *Bitmap) Add(is ...int) {
 	}
 }
 
-func (me *Bitmap) AddRange(begin, end int) {
+func (me *Bitmap) AddRange(begin, end BitIndex) {
 	if begin >= end {
 		return
 	}
 	me.lazyRB().AddRange(uint64(begin), uint64(end))
 }
 
-func (me *Bitmap) Remove(i int) bool {
+func (me *Bitmap) Remove(i BitIndex) bool {
 	if me.rb == nil {
 		return false
 	}
@@ -134,15 +136,15 @@ func (me Bitmap) Copy() (ret Bitmap) {
 	return
 }
 
-func (me *Bitmap) FlipRange(begin, end int) {
+func (me *Bitmap) FlipRange(begin, end BitIndex) {
 	me.lazyRB().FlipInt(begin, end)
 }
 
-func (me *Bitmap) Get(bit int) bool {
+func (me *Bitmap) Get(bit BitIndex) bool {
 	return me.rb != nil && me.rb.ContainsInt(bit)
 }
 
-func (me *Bitmap) Set(bit int, value bool) {
+func (me *Bitmap) Set(bit BitIndex, value bool) {
 	if value {
 		me.lazyRB().AddInt(bit)
 	} else {
@@ -152,7 +154,7 @@ func (me *Bitmap) Set(bit int, value bool) {
 	}
 }
 
-func (me *Bitmap) RemoveRange(begin, end int) *Bitmap {
+func (me *Bitmap) RemoveRange(begin, end BitIndex) *Bitmap {
 	if me.rb == nil {
 		return me
 	}
