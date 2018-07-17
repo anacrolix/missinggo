@@ -138,7 +138,7 @@ func (me *PriorityBitmap) Iter(f iter.Callback) {
 	})
 }
 
-func (me *PriorityBitmap) IterTyped(_f func(i int) bool) bool {
+func (me *PriorityBitmap) IterTyped(_f func(i bitmap.BitIndex) bool) bool {
 	me.mu.Lock()
 	defer me.mu.Unlock()
 	if me == nil || me.om == nil {
