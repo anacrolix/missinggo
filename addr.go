@@ -10,6 +10,8 @@ func AddrPort(addr net.Addr) int {
 	switch raw := addr.(type) {
 	case *net.UDPAddr:
 		return raw.Port
+	case *net.TCPAddr:
+		return raw.Port
 	default:
 		_, port, err := net.SplitHostPort(addr.String())
 		if err != nil {
