@@ -110,7 +110,21 @@ func (me *packetConn) LocalAddr() net.Addr {
 	return me.addr
 }
 
-var errTimeout = errors.New("i/o timeout")
+type errTimeout struct{}
+
+func (errTimeout) Error() string {
+	return "i/o timeout"
+}
+
+func (errTimeout) Temporary() bool {
+	return false
+}
+
+func (errTimeout) Timeout() bool {
+	return true
+}
+
+var _ net.Error = errTimeout{}
 
 func (me *packetConn) WriteTo(b []byte, na net.Addr) (n int, err error) {
 	mu.Lock()
@@ -120,7 +134,7 @@ func (me *packetConn) WriteTo(b []byte, na net.Addr) (n int, err error) {
 		return
 	}
 	if me.writeDeadline.exceeded() {
-		err = errTimeout
+		err = errTimeout{}
 		return
 	}
 	n = len(b)
@@ -152,7 +166,7 @@ func (me *packetConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {
 			return
 		}
 		if me.readDeadline.exceeded() {
-			err = errTimeout
+			err = errTimeout{}
 			return
 		}
 		cond.Wait()
