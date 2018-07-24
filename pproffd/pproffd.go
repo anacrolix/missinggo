@@ -1,3 +1,4 @@
+// Package pproffd is for detecting resource leaks due to unclosed handles.
 package pproffd
 
 import (
@@ -7,7 +8,15 @@ import (
 	"runtime/pprof"
 )
 
-var p = pprof.NewProfile("fds")
+const enabled = false
+
+var p *pprof.Profile
+
+func init() {
+	if enabled {
+		p = pprof.NewProfile("fds")
+	}
+}
 
 type fd int
 
@@ -15,7 +24,7 @@ func (me *fd) Closed() {
 	p.Remove(me)
 }
 
-func Add(skip int) (ret *fd) {
+func add(skip int) (ret *fd) {
 	ret = new(fd)
 	p.Add(ret, skip+2)
 	return
@@ -33,7 +42,7 @@ func (me closeWrapper) Close() error {
 
 func newCloseWrapper(c io.Closer) closeWrapper {
 	return closeWrapper{
-		fd: Add(2),
+		fd: add(2),
 		c:  c,
 	}
 }
@@ -49,6 +58,9 @@ func (me wrappedNetConn) Close() error {
 
 // Tracks a net.Conn until Close() is explicitly called.
 func WrapNetConn(nc net.Conn) net.Conn {
+	if !enabled {
+		return nc
+	}
 	if nc == nil {
 		return nil
 	}
@@ -78,5 +90,8 @@ func (me wrappedOSFile) Close() error {
 }
 
 func WrapOSFile(f *os.File) OSFile {
+	if !enabled {
+		return f
+	}
 	return &wrappedOSFile{f, newCloseWrapper(f)}
 }
