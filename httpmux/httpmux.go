@@ -34,6 +34,9 @@ func (me *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r = r.WithContext(context.WithValue(r.Context(), pathParamContextKey, &PathParams{m}))
 	defer func() {
 		r := recover()
+		if r == http.ErrAbortHandler {
+			panic(r)
+		}
 		if r == nil {
 			return
 		}
