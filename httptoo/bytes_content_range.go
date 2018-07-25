@@ -1,6 +1,7 @@
 package httptoo
 
 import (
+	"fmt"
 	"math"
 	"regexp"
 	"strconv"
@@ -13,6 +14,13 @@ type BytesContentRange struct {
 
 type BytesRange struct {
 	First, Last int64
+}
+
+func (me BytesRange) String() string {
+	if me.Last == math.MaxInt64 {
+		return fmt.Sprintf("bytes=%d-", me.First)
+	}
+	return fmt.Sprintf("bytes=%d-%d", me.First, me.Last)
 }
 
 var (
