@@ -1,17 +1,17 @@
 package conntrack
 
-import "time"
+import (
+	"sync"
+	"time"
+)
 
 type EntryHandle struct {
 	reason  string
 	e       Entry
 	i       *Instance
 	expires time.Time
+	added   sync.Mutex
 }
-
-// func (eh *EntryHandle) Forget() {
-// 	eh.remove()
-// }
 
 func (eh *EntryHandle) Done() {
 	timeout := eh.timeout()
