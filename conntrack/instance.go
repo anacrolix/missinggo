@@ -91,6 +91,9 @@ func (i *Instance) wakeEntry(e Entry) {
 	for _, eh := range i.waitersByEntry[e] {
 		i.entries[e][eh] = struct{}{}
 		delete(i.waitersByReason[eh.reason], eh)
+		if len(i.waitersByReason[eh.reason]) == 0 {
+			delete(i.waitersByReason, eh.reason)
+		}
 		eh.added.Unlock()
 	}
 	delete(i.waitersByEntry, e)
