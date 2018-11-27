@@ -24,6 +24,10 @@ func (eh *EntryHandle) Done() {
 	}
 }
 
+func (eh *EntryHandle) Forget() {
+	eh.remove()
+}
+
 func (eh *EntryHandle) remove() {
 	eh.i.remove(eh)
 }
