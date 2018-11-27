@@ -3,14 +3,13 @@ package orderedmap
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/anacrolix/missinggo/iter"
+	"github.com/stretchr/testify/assert"
 )
 
 func slice(om OrderedMap) (ret []interface{}) {
 	om.Iter(func(i interface{}) bool {
-		ret = append(ret, i)
+		ret = append(ret, om.Get(i))
 		return true
 	})
 	return
