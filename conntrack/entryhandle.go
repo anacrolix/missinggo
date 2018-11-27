@@ -6,11 +6,12 @@ import (
 )
 
 type EntryHandle struct {
-	reason  string
-	e       Entry
-	i       *Instance
-	expires time.Time
-	added   sync.Mutex
+	reason   string
+	e        Entry
+	priority priority
+	i        *Instance
+	expires  time.Time
+	added    sync.Mutex
 }
 
 func (eh *EntryHandle) Done() {

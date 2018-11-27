@@ -15,18 +15,18 @@ func TestWaitingForSameEntry(t *testing.T) {
 		return 0
 	}
 	e1 := Entry{"", "", "1"}
-	e1h1 := i.Wait(e1, "1")
+	e1h1 := i.Wait(e1, "1", 0)
 	gotE2s := make(chan struct{})
 	for range iter.N(2) {
 		go func() {
-			i.Wait(Entry{"", "", "2"}, "")
+			i.Wait(Entry{"", "", "2"}, "", 0)
 			gotE2s <- struct{}{}
 		}()
 	}
 	gotE1 := make(chan struct{})
 	var e1h2 *EntryHandle
 	go func() {
-		e1h2 = i.Wait(e1, "2")
+		e1h2 = i.Wait(e1, "2", 0)
 		gotE1 <- struct{}{}
 	}()
 	select {

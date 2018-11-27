@@ -6,6 +6,8 @@ import (
 	"sync"
 	"text/tabwriter"
 	"time"
+
+	"github.com/anacrolix/missinggo/orderedmap"
 )
 
 type reason = string
@@ -14,13 +16,19 @@ type Instance struct {
 	maxEntries int
 	Timeout    func(Entry) time.Duration
 
-	mu              sync.Mutex
-	entries         map[Entry]handles
-	waitersByReason map[reason]handles
-	waitersByEntry  map[Entry][]*EntryHandle
+	mu                sync.Mutex
+	entries           map[Entry]handles
+	waitersByPriority orderedmap.OrderedMap
+	waitersByReason   map[reason]entryHandleSet
+	waitersByEntry    map[Entry][]*EntryHandle
 }
 
-type handles = map[*EntryHandle]struct{}
+type (
+	entryHandleSet         = map[*EntryHandle]struct{}
+	waitersByPriorityValue = entryHandleSet
+	priority               int
+	handles                = map[*EntryHandle]struct{}
+)
 
 func NewInstance() *Instance {
 	i := &Instance{
@@ -29,8 +37,11 @@ func NewInstance() *Instance {
 			// udp is the main offender, and the default is allegedly 30s.
 			return 30 * time.Second
 		},
-		entries:         make(map[Entry]handles),
-		waitersByReason: make(map[reason]handles),
+		entries: make(map[Entry]handles),
+		waitersByPriority: orderedmap.New(func(_l, _r interface{}) bool {
+			return _l.(priority) > _r.(priority)
+		}),
+		waitersByReason: make(map[reason]entryHandleSet),
 		waitersByEntry:  make(map[Entry][]*EntryHandle),
 	}
 	return i
@@ -42,7 +53,7 @@ func (i *Instance) SetMaxEntries(max int) {
 	prev := i.maxEntries
 	i.maxEntries = max
 	for j := prev; j < max; j++ {
-		i.wakeAny()
+		i.wakeOne()
 	}
 }
 
@@ -53,57 +64,65 @@ func (i *Instance) remove(eh *EntryHandle) {
 	delete(hs, eh)
 	if len(hs) == 0 {
 		delete(i.entries, eh.e)
-		i.wakeWaiter(eh.reason)
+		i.wakeOne()
 	}
 }
 
-func (i *Instance) chooseWakeReason(avoid reason) reason {
-	for k := range i.waitersByReason {
-		if k == avoid {
-			continue
+func (i *Instance) wakeOne() {
+	i.waitersByPriority.Iter(func(key interface{}) bool {
+		value := i.waitersByPriority.Get(key).(entryHandleSet)
+		for eh := range value {
+			i.wakeEntry(eh.e)
+			break
 		}
-		return k
-	}
-	return avoid
+		return false
+	})
 }
 
-func (i *Instance) wakeWaiter(avoid reason) {
-	r := i.chooseWakeReason(avoid)
-	i.wakeReason(r)
-}
-
-func (i *Instance) wakeAny() {
-	for r := range i.waitersByReason {
-		i.wakeReason(r)
-		break
+func (i *Instance) deleteWaiter(eh *EntryHandle) {
+	p := i.waitersByPriority.Get(eh.priority).(entryHandleSet)
+	delete(p, eh)
+	if len(p) == 0 {
+		i.waitersByPriority.Unset(eh.priority)
+	}
+	r := i.waitersByReason[eh.reason]
+	delete(r, eh)
+	if len(r) == 0 {
+		delete(i.waitersByReason, eh.reason)
 	}
 }
 
-func (i *Instance) wakeReason(r reason) {
-	for k := range i.waitersByReason[r] {
-		i.wakeEntry(k.e)
-		break
+func (i *Instance) addWaiter(eh *EntryHandle) {
+	p, ok := i.waitersByPriority.GetOk(eh.priority)
+	if ok {
+		p.(entryHandleSet)[eh] = struct{}{}
+	} else {
+		i.waitersByPriority.Set(eh.priority, entryHandleSet{eh: struct{}{}})
 	}
+	if r := i.waitersByReason[eh.reason]; r == nil {
+		i.waitersByReason[eh.reason] = entryHandleSet{eh: struct{}{}}
+	} else {
+		r[eh] = struct{}{}
+	}
+	i.waitersByEntry[eh.e] = append(i.waitersByEntry[eh.e], eh)
 }
 
 func (i *Instance) wakeEntry(e Entry) {
 	i.entries[e] = make(handles)
 	for _, eh := range i.waitersByEntry[e] {
 		i.entries[e][eh] = struct{}{}
-		delete(i.waitersByReason[eh.reason], eh)
-		if len(i.waitersByReason[eh.reason]) == 0 {
-			delete(i.waitersByReason, eh.reason)
-		}
+		i.deleteWaiter(eh)
 		eh.added.Unlock()
 	}
 	delete(i.waitersByEntry, e)
 }
 
-func (i *Instance) Wait(e Entry, reason string) (eh *EntryHandle) {
+func (i *Instance) Wait(e Entry, reason string, p priority) (eh *EntryHandle) {
 	eh = &EntryHandle{
-		reason: reason,
-		e:      e,
-		i:      i,
+		reason:   reason,
+		e:        e,
+		i:        i,
+		priority: p,
 	}
 	i.mu.Lock()
 	hs, ok := i.entries[eh.e]
@@ -120,11 +139,7 @@ func (i *Instance) Wait(e Entry, reason string) (eh *EntryHandle) {
 		return
 	}
 	eh.added.Lock()
-	if i.waitersByReason[reason] == nil {
-		i.waitersByReason[reason] = make(handles)
-	}
-	i.waitersByReason[reason][eh] = struct{}{}
-	i.waitersByEntry[e] = append(i.waitersByEntry[e], eh)
+	i.addWaiter(eh)
 	i.mu.Unlock()
 	eh.added.Lock()
 	return
