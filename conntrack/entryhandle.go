@@ -17,7 +17,11 @@ type EntryHandle struct {
 func (eh *EntryHandle) Done() {
 	timeout := eh.timeout()
 	eh.expires = time.Now().Add(timeout)
-	time.AfterFunc(eh.timeout(), eh.remove)
+	if timeout <= 0 {
+		eh.remove()
+	} else {
+		time.AfterFunc(eh.timeout(), eh.remove)
+	}
 }
 
 func (eh *EntryHandle) remove() {
