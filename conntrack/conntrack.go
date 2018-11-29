@@ -1,5 +1,7 @@
 package conntrack
 
+import "expvar"
+
 type Protocol = string
 
 type Endpoint = string
@@ -9,3 +11,5 @@ type Entry struct {
 	LocalAddr  Endpoint
 	RemoteAddr Endpoint
 }
+
+var expvars = expvar.NewMap("conntrack")

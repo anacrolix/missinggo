@@ -129,6 +129,7 @@ func (i *Instance) Wait(e Entry, reason string, p priority) (eh *EntryHandle) {
 	if ok {
 		hs[eh] = struct{}{}
 		i.mu.Unlock()
+		expvars.Add("waits for existing entry", 1)
 		return
 	}
 	if len(i.entries) < i.maxEntries {
@@ -136,11 +137,13 @@ func (i *Instance) Wait(e Entry, reason string, p priority) (eh *EntryHandle) {
 			eh: struct{}{},
 		}
 		i.mu.Unlock()
+		expvars.Add("waits with space in table", 1)
 		return
 	}
 	eh.added.Lock()
 	i.addWaiter(eh)
 	i.mu.Unlock()
+	expvars.Add("waits that blocked", 1)
 	eh.added.Lock()
 	return
 }
