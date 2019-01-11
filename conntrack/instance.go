@@ -32,7 +32,8 @@ type (
 
 func NewInstance() *Instance {
 	i := &Instance{
-		maxEntries: 200,
+		// A quarter of the commonly quoted absolute max on a Linux system.
+		maxEntries: 1 << 14,
 		Timeout: func(e Entry) time.Duration {
 			// udp is the main offender, and the default is allegedly 30s.
 			return 30 * time.Second
