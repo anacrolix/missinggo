@@ -13,14 +13,18 @@ import (
 type reason = string
 
 type Instance struct {
-	maxEntries int
-	Timeout    func(Entry) time.Duration
+	maxEntries   int
+	noMaxEntries bool
+	Timeout      func(Entry) time.Duration
 
-	mu                sync.Mutex
-	entries           map[Entry]handles
+	mu      sync.Mutex
+	entries map[Entry]handles
+	// priority to entryHandleSet, ordered by priority ascending
 	waitersByPriority orderedmap.OrderedMap
 	waitersByReason   map[reason]entryHandleSet
 	waitersByEntry    map[Entry][]*EntryHandle
+	numWaiters        int
+	numWaitersChanged sync.Cond
 }
 
 type (
@@ -45,12 +49,21 @@ func NewInstance() *Instance {
 		waitersByReason: make(map[reason]entryHandleSet),
 		waitersByEntry:  make(map[Entry][]*EntryHandle),
 	}
+	i.numWaitersChanged.L = &i.mu
 	return i
+}
+
+func (i *Instance) SetNoMaxEntries() {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	i.noMaxEntries = true
+	i.wakeAll()
 }
 
 func (i *Instance) SetMaxEntries(max int) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
+	i.noMaxEntries = false
 	prev := i.maxEntries
 	i.maxEntries = max
 	for j := prev; j < max; j++ {
@@ -69,6 +82,14 @@ func (i *Instance) remove(eh *EntryHandle) {
 	}
 }
 
+// Wakes all waiters.
+func (i *Instance) wakeAll() {
+	for i.numWaiters != 0 {
+		i.wakeOne()
+	}
+}
+
+// Wakes the highest priority waiter.
 func (i *Instance) wakeOne() {
 	i.waitersByPriority.Iter(func(key interface{}) bool {
 		value := i.waitersByPriority.Get(key).(entryHandleSet)
@@ -91,6 +112,8 @@ func (i *Instance) deleteWaiter(eh *EntryHandle) {
 	if len(r) == 0 {
 		delete(i.waitersByReason, eh.reason)
 	}
+	i.numWaiters--
+	i.numWaitersChanged.Broadcast()
 }
 
 func (i *Instance) addWaiter(eh *EntryHandle) {
@@ -106,9 +129,16 @@ func (i *Instance) addWaiter(eh *EntryHandle) {
 		r[eh] = struct{}{}
 	}
 	i.waitersByEntry[eh.e] = append(i.waitersByEntry[eh.e], eh)
+	i.numWaiters++
+	i.numWaitersChanged.Broadcast()
 }
 
+// Wakes all waiters on an entry. Note that the entry is also added
+// immediately, the waiters are all let through.
 func (i *Instance) wakeEntry(e Entry) {
+	if _, ok := i.entries[e]; ok {
+		panic(e)
+	}
 	i.entries[e] = make(handles)
 	for _, eh := range i.waitersByEntry[e] {
 		i.entries[e][eh] = struct{}{}
@@ -133,7 +163,7 @@ func (i *Instance) Wait(e Entry, reason string, p priority) (eh *EntryHandle) {
 		expvars.Add("waits for existing entry", 1)
 		return
 	}
-	if len(i.entries) < i.maxEntries {
+	if i.noMaxEntries || len(i.entries) < i.maxEntries {
 		i.entries[eh.e] = handles{
 			eh: struct{}{},
 		}
@@ -154,7 +184,7 @@ func (i *Instance) PrintStatus(w io.Writer) {
 	i.mu.Lock()
 	fmt.Fprintf(w, "num entries: %d\n", len(i.entries))
 	fmt.Fprintln(w)
-	fmt.Fprintln(w, "waiters:")
+	fmt.Fprintf(w, "%d waiters:\n", i.numWaiters)
 	fmt.Fprintf(tw, "num\treason\n")
 	for r, ws := range i.waitersByReason {
 		fmt.Fprintf(tw, "%d\t%q\n", len(ws), r)
