@@ -171,10 +171,12 @@ func (i *Instance) Wait(e Entry, reason string, p priority) (eh *EntryHandle) {
 		expvars.Add("waits with space in table", 1)
 		return
 	}
+	// Lock the mutex, so that a following Lock will block until it's unlocked by a wake event.
 	eh.added.Lock()
 	i.addWaiter(eh)
 	i.mu.Unlock()
 	expvars.Add("waits that blocked", 1)
+	// Blocks until woken by an Unlock.
 	eh.added.Lock()
 	return
 }
