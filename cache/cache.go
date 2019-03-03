@@ -99,3 +99,13 @@ func (me *Cache) Filled() int64 {
 	defer me.mu.Unlock()
 	return me.filled
 }
+
+func (me *Cache) Candidate() (Item, bool) {
+	me.mu.Lock()
+	defer me.mu.Unlock()
+	k, ok := me.Policy.Candidate()
+	return Item{
+		Key:      k,
+		ItemMeta: me.Items[k],
+	}, ok
+}
