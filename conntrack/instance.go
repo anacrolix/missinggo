@@ -1,6 +1,7 @@
 package conntrack
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"sync"
@@ -17,13 +18,15 @@ type Instance struct {
 	noMaxEntries bool
 	Timeout      func(Entry) time.Duration
 
-	mu      sync.Mutex
+	mu sync.Mutex
+	// Occupied slots
 	entries map[Entry]handles
+
 	// priority to entryHandleSet, ordered by priority ascending
 	waitersByPriority orderedmap.OrderedMap
 	waitersByReason   map[reason]entryHandleSet
-	waitersByEntry    map[Entry][]*EntryHandle
-	numWaiters        int
+	waitersByEntry    map[Entry]entryHandleSet
+	waiters           entryHandleSet
 	numWaitersChanged sync.Cond
 }
 
@@ -47,7 +50,8 @@ func NewInstance() *Instance {
 			return _l.(priority) > _r.(priority)
 		}),
 		waitersByReason: make(map[reason]entryHandleSet),
-		waitersByEntry:  make(map[Entry][]*EntryHandle),
+		waitersByEntry:  make(map[Entry]entryHandleSet),
+		waiters:         make(entryHandleSet),
 	}
 	i.numWaitersChanged.L = &i.mu
 	return i
@@ -84,7 +88,7 @@ func (i *Instance) remove(eh *EntryHandle) {
 
 // Wakes all waiters.
 func (i *Instance) wakeAll() {
-	for i.numWaiters != 0 {
+	for len(i.waiters) != 0 {
 		i.wakeOne()
 	}
 }
@@ -102,6 +106,7 @@ func (i *Instance) wakeOne() {
 }
 
 func (i *Instance) deleteWaiter(eh *EntryHandle) {
+	delete(i.waiters, eh)
 	p := i.waitersByPriority.Get(eh.priority).(entryHandleSet)
 	delete(p, eh)
 	if len(p) == 0 {
@@ -112,7 +117,11 @@ func (i *Instance) deleteWaiter(eh *EntryHandle) {
 	if len(r) == 0 {
 		delete(i.waitersByReason, eh.reason)
 	}
-	i.numWaiters--
+	e := i.waitersByEntry[eh.e]
+	delete(e, eh)
+	if len(e) == 0 {
+		delete(i.waitersByEntry, eh.e)
+	}
 	i.numWaitersChanged.Broadcast()
 }
 
@@ -128,27 +137,37 @@ func (i *Instance) addWaiter(eh *EntryHandle) {
 	} else {
 		r[eh] = struct{}{}
 	}
-	i.waitersByEntry[eh.e] = append(i.waitersByEntry[eh.e], eh)
-	i.numWaiters++
+	if e := i.waitersByEntry[eh.e]; e == nil {
+		i.waitersByEntry[eh.e] = entryHandleSet{eh: struct{}{}}
+	} else {
+		e[eh] = struct{}{}
+	}
+	i.waiters[eh] = struct{}{}
 	i.numWaitersChanged.Broadcast()
 }
 
-// Wakes all waiters on an entry. Note that the entry is also added
+// Wakes all waiters on an entry. Note that the entry is also woken
 // immediately, the waiters are all let through.
 func (i *Instance) wakeEntry(e Entry) {
 	if _, ok := i.entries[e]; ok {
 		panic(e)
 	}
-	i.entries[e] = make(handles)
-	for _, eh := range i.waitersByEntry[e] {
+	i.entries[e] = make(handles, len(i.waitersByEntry[e]))
+	for eh := range i.waitersByEntry[e] {
 		i.entries[e][eh] = struct{}{}
 		i.deleteWaiter(eh)
-		eh.added.Unlock()
+		eh.wake.Unlock()
 	}
-	delete(i.waitersByEntry, e)
+	if i.waitersByEntry[e] != nil {
+		panic(i.waitersByEntry[e])
+	}
 }
 
-func (i *Instance) Wait(e Entry, reason string, p priority) (eh *EntryHandle) {
+func (i *Instance) WaitDefault(ctx context.Context, e Entry) *EntryHandle {
+	return i.Wait(ctx, e, "", 0)
+}
+
+func (i *Instance) Wait(ctx context.Context, e Entry, reason string, p priority) (eh *EntryHandle) {
 	eh = &EntryHandle{
 		reason:   reason,
 		e:        e,
@@ -172,12 +191,28 @@ func (i *Instance) Wait(e Entry, reason string, p priority) (eh *EntryHandle) {
 		return
 	}
 	// Lock the mutex, so that a following Lock will block until it's unlocked by a wake event.
-	eh.added.Lock()
+	eh.wake.Lock()
 	i.addWaiter(eh)
 	i.mu.Unlock()
 	expvars.Add("waits that blocked", 1)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	go func() {
+		<-ctx.Done()
+		i.mu.Lock()
+		if _, ok := i.waiters[eh]; ok {
+			i.deleteWaiter(eh)
+			eh.wake.Unlock()
+		}
+		i.mu.Unlock()
+	}()
 	// Blocks until woken by an Unlock.
-	eh.added.Lock()
+	eh.wake.Lock()
+	i.mu.Lock()
+	if _, ok := i.entries[eh.e][eh]; !ok {
+		eh = nil
+	}
+	i.mu.Unlock()
 	return
 }
 
@@ -186,7 +221,7 @@ func (i *Instance) PrintStatus(w io.Writer) {
 	i.mu.Lock()
 	fmt.Fprintf(w, "num entries: %d\n", len(i.entries))
 	fmt.Fprintln(w)
-	fmt.Fprintf(w, "%d waiters:\n", i.numWaiters)
+	fmt.Fprintf(w, "%d waiters:\n", len(i.waiters))
 	fmt.Fprintf(tw, "num\treason\n")
 	for r, ws := range i.waitersByReason {
 		fmt.Fprintf(tw, "%d\t%q\n", len(ws), r)

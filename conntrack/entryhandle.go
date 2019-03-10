@@ -11,7 +11,7 @@ type EntryHandle struct {
 	priority priority
 	i        *Instance
 	expires  time.Time
-	added    sync.Mutex
+	wake     sync.Mutex
 }
 
 func (eh *EntryHandle) Done() {
