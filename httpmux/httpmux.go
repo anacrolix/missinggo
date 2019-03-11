@@ -12,16 +12,28 @@ import (
 var pathParamContextKey = new(struct{})
 
 type Mux struct {
-	handlers []handler
+	handlers []Handler
 }
 
 func New() *Mux {
 	return new(Mux)
 }
 
-type handler struct {
+type Handler struct {
 	path        *regexp.Regexp
 	userHandler http.Handler
+}
+
+func (h Handler) Pattern() string {
+	return h.path.String()
+}
+
+func (mux *Mux) GetHandler(r *http.Request) *Handler {
+	matches := mux.matchingHandlers(r)
+	if len(matches) == 0 {
+		return nil
+	}
+	return &matches[0].Handler
 }
 
 func (me *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -40,13 +52,13 @@ func (me *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if r == nil {
 			return
 		}
-		panic(fmt.Sprintf("while handling %q: %s", m.handler.path.String(), r))
+		panic(fmt.Sprintf("while handling %q: %s", m.Handler.path.String(), r))
 	}()
-	m.handler.userHandler.ServeHTTP(w, r)
+	m.Handler.userHandler.ServeHTTP(w, r)
 }
 
 type match struct {
-	handler    handler
+	Handler    Handler
 	submatches []string
 }
 
@@ -82,7 +94,7 @@ func (me *Mux) Handle(path string, h http.Handler) {
 	if !me.distinctHandlerRegexp(re) {
 		panic(fmt.Sprintf("path %q is not distinct", path))
 	}
-	me.handlers = append(me.handlers, handler{re, h})
+	me.handlers = append(me.handlers, Handler{re, h})
 }
 
 func (me *Mux) HandleFunc(path string, hf func(http.ResponseWriter, *http.Request)) {
@@ -98,7 +110,7 @@ type PathParams struct {
 }
 
 func (me *PathParams) ByName(name string) string {
-	for i, sn := range me.match.handler.path.SubexpNames()[1:] {
+	for i, sn := range me.match.Handler.path.SubexpNames()[1:] {
 		if sn == name {
 			return me.match.submatches[i+1]
 		}
