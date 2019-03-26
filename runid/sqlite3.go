@@ -16,6 +16,8 @@ func New(db *sql.DB) (ret *T) {
 	defer func() {
 		expect.Nil(conn.Close())
 	}()
+	_, err = conn.ExecContext(ctx, `CREATE TABLE if not exists runs (started datetime default (datetime('now')))`)
+	expect.Nil(err)
 	res, err := conn.ExecContext(ctx, "insert into runs default values")
 	expect.Nil(err)
 	expect.OneRowAffected(res)
