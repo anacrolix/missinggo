@@ -13,13 +13,13 @@ import (
 // code, and number of bytes written for example.
 type StatusResponseWriter struct {
 	http.ResponseWriter
-	Code         int
-	BytesWritten int64
-	Started      time.Time
-	Ttfb         time.Duration // Time to first byte
-	GotFirstByte bool
-	WroteHeader  Event
-	Hijacked     bool
+	Code            int
+	BytesWritten    int64
+	Started         time.Time
+	TimeToFirstByte time.Duration // Time to first byte
+	GotFirstByte    bool
+	WroteHeader     Event
+	Hijacked        bool
 }
 
 var _ interface {
@@ -33,14 +33,15 @@ func (me *StatusResponseWriter) Write(b []byte) (n int, err error) {
 	if !me.WroteHeader.IsSet() {
 		me.WriteHeader(http.StatusOK)
 	}
-	if !me.GotFirstByte && len(b) > 0 {
-		if me.Started.IsZero() {
-			panic("Started was not initialized")
-		}
-		me.Ttfb = time.Since(me.Started)
+	if me.Started.IsZero() {
+		panic("Started was not initialized")
+	}
+	timeBeforeWrite := time.Now()
+	n, err = me.ResponseWriter.Write(b)
+	if n > 0 && !me.GotFirstByte {
+		me.TimeToFirstByte = timeBeforeWrite.Sub(me.Started)
 		me.GotFirstByte = true
 	}
-	n, err = me.ResponseWriter.Write(b)
 	me.BytesWritten += int64(n)
 	return
 }
