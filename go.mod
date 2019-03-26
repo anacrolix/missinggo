@@ -1,4 +1,4 @@
-module github.com/anacrolix/missinggo
+module github.com/anacrolix/missinggo/v2
 
 require (
 	github.com/RoaringBitmap/roaring v0.4.7
