@@ -173,6 +173,7 @@ func (i *Instance) Wait(ctx context.Context, e Entry, reason string, p priority)
 		e:        e,
 		i:        i,
 		priority: p,
+		created:  time.Now(),
 	}
 	i.mu.Lock()
 	hs, ok := i.entries[eh.e]
@@ -229,11 +230,11 @@ func (i *Instance) PrintStatus(w io.Writer) {
 	tw.Flush()
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "handles:")
-	fmt.Fprintf(tw, "protocol\tlocal\tremote\treason\texpires\n")
+	fmt.Fprintf(tw, "protocol\tlocal\tremote\treason\texpires\tcreated\n")
 	for e, hs := range i.entries {
 		for h := range hs {
 			fmt.Fprintf(tw,
-				"%q\t%q\t%q\t%q\t%s\n",
+				"%q\t%q\t%q\t%q\t%s\t%v ago\n",
 				e.Protocol, e.LocalAddr, e.RemoteAddr, h.reason,
 				func() interface{} {
 					if h.expires.IsZero() {
@@ -242,6 +243,7 @@ func (i *Instance) PrintStatus(w io.Writer) {
 						return time.Until(h.expires)
 					}
 				}(),
+				time.Since(h.created),
 			)
 		}
 	}

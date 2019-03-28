@@ -11,6 +11,7 @@ type EntryHandle struct {
 	priority priority
 	i        *Instance
 	expires  time.Time
+	created  time.Time
 	wake     sync.Mutex
 }
 
