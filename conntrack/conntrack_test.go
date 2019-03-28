@@ -99,3 +99,35 @@ func TestWaitContextCanceledButRoomForEntry(t *testing.T) {
 		eh.Done()
 	}
 }
+
+func TestUnlimitedInstance(t *testing.T) {
+	i := NewInstance()
+	i.SetNoMaxEntries()
+	i.Timeout = func(Entry) time.Duration { return 0 }
+	eh := i.WaitDefault(context.Background(), entry(0))
+	assert.NotNil(t, eh)
+	i.mu.Lock()
+	assert.Len(t, i.entries[eh.e], 1)
+	i.mu.Unlock()
+	eh.Done()
+	i.mu.Lock()
+	assert.Nil(t, i.entries[eh.e])
+	i.mu.Unlock()
+}
+
+func TestUnlimitedInstanceContextCanceled(t *testing.T) {
+	i := NewInstance()
+	i.SetNoMaxEntries()
+	i.Timeout = func(Entry) time.Duration { return 0 }
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	eh := i.WaitDefault(ctx, entry(0))
+	assert.NotNil(t, eh)
+	i.mu.Lock()
+	assert.Len(t, i.entries[eh.e], 1)
+	i.mu.Unlock()
+	eh.Done()
+	i.mu.Lock()
+	assert.Nil(t, i.entries[eh.e])
+	i.mu.Unlock()
+}
