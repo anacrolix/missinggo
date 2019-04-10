@@ -167,6 +167,7 @@ func (i *Instance) WaitDefault(ctx context.Context, e Entry) *EntryHandle {
 	return i.Wait(ctx, e, "", 0)
 }
 
+// Nil returns are due to context completion.
 func (i *Instance) Wait(ctx context.Context, e Entry, reason string, p priority) (eh *EntryHandle) {
 	eh = &EntryHandle{
 		reason:   reason,
