@@ -131,3 +131,55 @@ func TestUnlimitedInstanceContextCanceled(t *testing.T) {
 	assert.Nil(t, i.entries[eh.e])
 	i.mu.Unlock()
 }
+
+func TestContextCancelledWhileWaiting(t *testing.T) {
+	i := NewInstance()
+	i.SetMaxEntries(0)
+	ctx, cancel := context.WithCancel(context.Background())
+	i.mu.Lock()
+	assert.Len(t, i.waiters, 0)
+	i.mu.Unlock()
+	waitReturned := make(chan struct{})
+	go func() {
+		eh := i.WaitDefault(ctx, entry(0))
+		assert.Nil(t, eh)
+		close(waitReturned)
+	}()
+	for {
+		i.mu.Lock()
+		if len(i.waiters) == 1 {
+			i.mu.Unlock()
+			break
+		}
+		i.mu.Unlock()
+		time.Sleep(time.Millisecond)
+	}
+	cancel()
+	<-waitReturned
+	assert.Len(t, i.entries, 0)
+	assert.Len(t, i.waiters, 0)
+}
+
+func TestRaceWakeAndContextCompletion(t *testing.T) {
+	i := NewInstance()
+	i.SetMaxEntries(1)
+	eh0 := i.WaitDefault(context.Background(), entry(0))
+	ctx, cancel := context.WithCancel(context.Background())
+	waitReturned := make(chan struct{})
+	go func() {
+		eh1 := i.WaitDefault(ctx, entry(1))
+		if eh1 != nil {
+			eh1.Forget()
+		}
+		close(waitReturned)
+	}()
+	go cancel()
+	go eh0.Forget()
+	<-waitReturned
+	cancel()
+	eh0.Forget()
+	i.mu.Lock()
+	assert.Len(t, i.entries, 0)
+	assert.Len(t, i.waiters, 0)
+	i.mu.Unlock()
+}
