@@ -147,8 +147,11 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 	f, err := os.OpenFile(me.realpath(key), flag, filePerm)
 	if flag&os.O_CREATE != 0 && os.IsNotExist(err) {
 		// Ensure intermediate directories and try again.
-		os.MkdirAll(filepath.Dir(me.realpath(key)), dirPerm)
+		dirErr := os.MkdirAll(filepath.Dir(me.realpath(key)), dirPerm)
 		f, err = os.OpenFile(me.realpath(key), flag, filePerm)
+		if dirErr != nil && os.IsNotExist(err) {
+			return nil, dirErr
+		}
 		if err != nil {
 			go me.pruneEmptyDirs(key)
 		}
