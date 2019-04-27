@@ -7,6 +7,8 @@ import (
 	"path"
 	"regexp"
 	"strings"
+
+	"go.opencensus.io/trace"
 )
 
 var pathParamContextKey = new(struct{})
@@ -43,7 +45,10 @@ func (me *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m := matches[0]
-	r = r.WithContext(context.WithValue(r.Context(), pathParamContextKey, &PathParams{m}))
+	ctx := context.WithValue(r.Context(), pathParamContextKey, &PathParams{m})
+	ctx, span := trace.StartSpan(ctx, m.Handler.path.String(), trace.WithSpanKind(trace.SpanKindServer))
+	defer span.End()
+	r = r.WithContext(ctx)
 	defer func() {
 		r := recover()
 		if r == http.ErrAbortHandler {
