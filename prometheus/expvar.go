@@ -81,6 +81,9 @@ func (c collector) metricError(err error) {
 }
 
 func (c collector) withLabelValue(lv string) collector {
+	//if !utf8.ValidString(lv) {
+	//	lv = strconv.Quote(lv)
+	//}
 	c.labelValues = append(c.labelValues, lv)
 	return c
 }
@@ -118,9 +121,16 @@ func (c collector) collectJsonValue(v interface{}) {
 }
 
 func (c collector) collectVar(v expvar.Var) {
+	//switch _v := v.(type) {
+	//case *expvar.Map:
+	//	_v.Do(func(kv expvar.KeyValue) {
+	//		c.withLabelValue(kv.Key).collectVar(kv.Value)
+	//	})
+	//	return
+	//}
 	var jv interface{}
 	if err := json.Unmarshal([]byte(v.String()), &jv); err != nil {
-		c.metricError(err)
+		c.metricError(fmt.Errorf("error unmarshaling Var json: %s", err))
 	}
 	c.collectJsonValue(jv)
 }

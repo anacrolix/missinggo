@@ -1,11 +1,14 @@
 package xprometheus
 
 import (
+	"expvar"
+	"fmt"
 	"sync"
 	"testing"
 
 	"github.com/bradfitz/iter"
 	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 )
 
 func BenchmarkExpvarCollector_Collect(b *testing.B) {
@@ -27,4 +30,22 @@ func BenchmarkExpvarCollector_Collect(b *testing.B) {
 	close(ch)
 	wg.Wait()
 	b.Logf("collected %d metrics (%f per collect)", n, float64(n)/float64(b.N))
+}
+
+func TestCollectInvalidJsonStringChar(t *testing.T) {
+	c := collector{
+		descs: make(map[int]*prometheus.Desc),
+		f: func(m prometheus.Metric) {
+			var iom dto.Metric
+			err := m.Write(&iom)
+			if err != nil {
+				t.Fatal(err)
+			} else {
+				t.Log(iom)
+			}
+		},
+	}
+	v := expvar.NewMap("herp")
+	v.Add(fmt.Sprintf("received query %q", "find\xdfnode"), 1)
+	c.collectVar(v)
 }
