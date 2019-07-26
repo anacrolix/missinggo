@@ -88,7 +88,13 @@ func TestRemoveRange(t *testing.T) {
 
 func TestLimits(t *testing.T) {
 	var bm Bitmap
-	assert.Panics(t, func() { bm.Add(math.MaxInt64) })
+
+	// We can't reliably test out of bounds for systems where int is only 32-bit. Rather than guess
+	// for every possible GOARCH, I'll just skip the test here. The BitIndex/int wrapper around
+	// roaring's types are bad anyway. See https://github.com/anacrolix/missinggo/issues/16.
+
+	//assert.Panics(t, func() { bm.Add(math.MaxInt64) })
+
 	bm.Add(-1)
 	assert.EqualValues(t, 1, bm.Len())
 	assert.EqualValues(t, []int{MaxInt}, bm.ToSortedSlice())
