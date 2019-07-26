@@ -45,7 +45,7 @@ func TestCollectInvalidJsonStringChar(t *testing.T) {
 			}
 		},
 	}
-	v := expvar.NewMap("herp")
+	v := new(expvar.Map).Init()
 	v.Add(fmt.Sprintf("received query %q", "find\xdfnode"), 1)
 	c.collectVar(v)
 }
