@@ -44,6 +44,7 @@ jobs:
       - run: go get -d ./...
       - run: go test -bench . -count 2 ./... -v -race
       - run: go test -bench . -count 2 ./...
+      - run: GOARCH=386 go test -bench . -count 2 ./... -v
       - save_cache:
           key: go-pkg-{{ checksum "go.mod" }}
           paths:
