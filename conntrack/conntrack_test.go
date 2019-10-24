@@ -65,7 +65,7 @@ func TestInstanceSetNoMaxEntries(t *testing.T) {
 	}
 	waitForNumWaiters := func(num int) {
 		i.mu.Lock()
-		for len(i.waiters) != num {
+		for i.waiters.Len() != num {
 			i.numWaitersChanged.Wait()
 		}
 		i.mu.Unlock()
@@ -107,11 +107,11 @@ func TestUnlimitedInstance(t *testing.T) {
 	eh := i.WaitDefault(context.Background(), entry(0))
 	assert.NotNil(t, eh)
 	i.mu.Lock()
-	assert.Len(t, i.entries[eh.e], 1)
+	assert.EqualValues(t, i.entries.Get(eh.e).Len(), 1)
 	i.mu.Unlock()
 	eh.Done()
 	i.mu.Lock()
-	assert.Nil(t, i.entries[eh.e])
+	assert.Nil(t, i.entries.Get(eh.e))
 	i.mu.Unlock()
 }
 
@@ -124,11 +124,11 @@ func TestUnlimitedInstanceContextCanceled(t *testing.T) {
 	eh := i.WaitDefault(ctx, entry(0))
 	assert.NotNil(t, eh)
 	i.mu.Lock()
-	assert.Len(t, i.entries[eh.e], 1)
+	assert.EqualValues(t, i.entries.Get(eh.e).Len(), 1)
 	i.mu.Unlock()
 	eh.Done()
 	i.mu.Lock()
-	assert.Nil(t, i.entries[eh.e])
+	assert.Nil(t, i.entries.Get(eh.e))
 	i.mu.Unlock()
 }
 
@@ -137,7 +137,7 @@ func TestContextCancelledWhileWaiting(t *testing.T) {
 	i.SetMaxEntries(0)
 	ctx, cancel := context.WithCancel(context.Background())
 	i.mu.Lock()
-	assert.Len(t, i.waiters, 0)
+	assert.EqualValues(t, i.waiters.Len(), 0)
 	i.mu.Unlock()
 	waitReturned := make(chan struct{})
 	go func() {
@@ -147,7 +147,7 @@ func TestContextCancelledWhileWaiting(t *testing.T) {
 	}()
 	for {
 		i.mu.Lock()
-		if len(i.waiters) == 1 {
+		if i.waiters.Len() == 1 {
 			i.mu.Unlock()
 			break
 		}
@@ -156,8 +156,8 @@ func TestContextCancelledWhileWaiting(t *testing.T) {
 	}
 	cancel()
 	<-waitReturned
-	assert.Len(t, i.entries, 0)
-	assert.Len(t, i.waiters, 0)
+	assert.EqualValues(t, i.entries.Len(), 0)
+	assert.EqualValues(t, i.waiters.Len(), 0)
 }
 
 func TestRaceWakeAndContextCompletion(t *testing.T) {
@@ -179,7 +179,7 @@ func TestRaceWakeAndContextCompletion(t *testing.T) {
 	cancel()
 	eh0.Forget()
 	i.mu.Lock()
-	assert.Len(t, i.entries, 0)
-	assert.Len(t, i.waiters, 0)
+	assert.EqualValues(t, i.entries.Len(), 0)
+	assert.EqualValues(t, i.waiters.Len(), 0)
 	i.mu.Unlock()
 }
