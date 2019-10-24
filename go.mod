@@ -5,6 +5,7 @@ require (
 	github.com/anacrolix/envpprof v1.0.0
 	github.com/anacrolix/missinggo v1.1.0
 	github.com/anacrolix/tagflag v1.0.0
+	github.com/benbjohnson/immutable v0.2.0
 	github.com/bradfitz/iter v0.0.0-20190303215204-33e6a9893b0c
 	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
 	github.com/dustin/go-humanize v1.0.0
@@ -20,3 +21,5 @@ require (
 	github.com/stretchr/testify v1.3.0
 	go.opencensus.io v0.20.2
 )
+
+go 1.13

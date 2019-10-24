@@ -8,7 +8,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/anacrolix/missinggo/orderedmap"
+	"github.com/benbjohnson/immutable"
 )
 
 type reason = string
@@ -23,7 +23,7 @@ type Instance struct {
 	entries map[Entry]handles
 
 	// priority to entryHandleSet, ordered by priority ascending
-	waitersByPriority orderedmap.OrderedMap
+	waitersByPriority *immutable.SortedMap
 	waitersByReason   map[reason]entryHandleSet
 	waitersByEntry    map[Entry]entryHandleSet
 	waiters           entryHandleSet
@@ -37,6 +37,20 @@ type (
 	handles                = map[*EntryHandle]struct{}
 )
 
+type priorityComparer struct{}
+
+func (priorityComparer) Compare(l, r interface{}) int {
+	_l := l.(priority)
+	_r := r.(priority)
+	if _l > _r {
+		return -1
+	} else if _r > _l {
+		return 1
+	} else {
+		return 0
+	}
+}
+
 func NewInstance() *Instance {
 	i := &Instance{
 		// A quarter of the commonly quoted absolute max on a Linux system.
@@ -45,10 +59,9 @@ func NewInstance() *Instance {
 			// udp is the main offender, and the default is allegedly 30s.
 			return 30 * time.Second
 		},
-		entries: make(map[Entry]handles),
-		waitersByPriority: orderedmap.New(func(_l, _r interface{}) bool {
-			return _l.(priority) > _r.(priority)
-		}),
+		entries:           make(map[Entry]handles),
+		waitersByPriority: immutable.NewSortedMap(priorityComparer{}),
+
 		waitersByReason: make(map[reason]entryHandleSet),
 		waitersByEntry:  make(map[Entry]entryHandleSet),
 		waiters:         make(entryHandleSet),
@@ -95,22 +108,25 @@ func (i *Instance) wakeAll() {
 
 // Wakes the highest priority waiter.
 func (i *Instance) wakeOne() {
-	i.waitersByPriority.Iter(func(key interface{}) bool {
-		value := i.waitersByPriority.Get(key).(entryHandleSet)
-		for eh := range value {
-			i.wakeEntry(eh.e)
-			break
-		}
-		return false
-	})
+	iter := i.waitersByPriority.Iterator()
+	if iter.Done() {
+		return
+	}
+	_, _value := iter.Next()
+	value := _value.(entryHandleSet)
+	for eh := range value {
+		i.wakeEntry(eh.e)
+		break
+	}
 }
 
 func (i *Instance) deleteWaiter(eh *EntryHandle) {
 	delete(i.waiters, eh)
-	p := i.waitersByPriority.Get(eh.priority).(entryHandleSet)
+	_p, _ := i.waitersByPriority.Get(eh.priority)
+	p := _p.(entryHandleSet)
 	delete(p, eh)
 	if len(p) == 0 {
-		i.waitersByPriority.Unset(eh.priority)
+		i.waitersByPriority = i.waitersByPriority.Delete(eh.priority)
 	}
 	r := i.waitersByReason[eh.reason]
 	delete(r, eh)
@@ -126,11 +142,11 @@ func (i *Instance) deleteWaiter(eh *EntryHandle) {
 }
 
 func (i *Instance) addWaiter(eh *EntryHandle) {
-	p, ok := i.waitersByPriority.GetOk(eh.priority)
+	p, ok := i.waitersByPriority.Get(eh.priority)
 	if ok {
 		p.(entryHandleSet)[eh] = struct{}{}
 	} else {
-		i.waitersByPriority.Set(eh.priority, entryHandleSet{eh: struct{}{}})
+		i.waitersByPriority = i.waitersByPriority.Set(eh.priority, entryHandleSet{eh: struct{}{}})
 	}
 	if r := i.waitersByReason[eh.reason]; r == nil {
 		i.waitersByReason[eh.reason] = entryHandleSet{eh: struct{}{}}
