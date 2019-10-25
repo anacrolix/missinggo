@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hash/crc32"
 	"math"
+	"unsafe"
 )
 
 const shiftSize = 5
@@ -57,8 +58,12 @@ func hash(x []byte) uint32 {
 	return crc32.ChecksumIEEE(x)
 }
 
+//go:noescape
+//go:linkname nilinterhash runtime.nilinterhash
+func nilinterhash(p unsafe.Pointer, h uintptr) uintptr
+
 func interfaceHash(x interface{}) uint32 {
-	return hash([]byte(fmt.Sprintf("%v", x)))
+	return uint32(nilinterhash(unsafe.Pointer(&x), 0))
 }
 
 func byteHash(x byte) uint32 {
