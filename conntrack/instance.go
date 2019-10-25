@@ -7,15 +7,7 @@ import (
 	"sync"
 	"text/tabwriter"
 	"time"
-
-	"github.com/benbjohnson/immutable"
 )
-
-//go:generate peds -file peds.go -pkg conntrack -sets entryHandleSet<*EntryHandle>
-
-//go:generate jenny mapset.tmpl entryToEntryHandleSet.go entryToEntryHandleSet conntrack Entry *entryHandleSet *EntryHandle
-
-//go:generate jenny mapset.tmpl reasonToEntryHandleSet.go reasonToEntryHandleSet conntrack reason *entryHandleSet *EntryHandle
 
 type reason = string
 
@@ -26,34 +18,19 @@ type Instance struct {
 
 	mu sync.Mutex
 	// Occupied slots
-	entries entryToEntryHandleSet
+	entries Mappish
 
 	// priority to entryHandleSet, ordered by priority ascending
-	waitersByPriority *immutable.SortedMap
-	waitersByReason   reasonToEntryHandleSet
-	waitersByEntry    entryToEntryHandleSet
-	waiters           *entryHandleSet
+	waitersByPriority Mappish
+	waitersByReason   Mappish
+	waitersByEntry    Mappish
+	waiters           Set
 	numWaitersChanged sync.Cond
 }
 
 type (
-	waitersByPriorityValue = entryHandleSet
-	priority               int
+	priority int
 )
-
-type priorityComparer struct{}
-
-func (priorityComparer) Compare(l, r interface{}) int {
-	_l := l.(priority)
-	_r := r.(priority)
-	if _l > _r {
-		return -1
-	} else if _r > _l {
-		return 1
-	} else {
-		return 0
-	}
-}
 
 func NewInstance() *Instance {
 	i := &Instance{
@@ -63,12 +40,14 @@ func NewInstance() *Instance {
 			// udp is the main offender, and the default is allegedly 30s.
 			return 30 * time.Second
 		},
-		entries:           NewentryToEntryHandleSet(),
-		waitersByPriority: immutable.NewSortedMap(priorityComparer{}),
+		entries: NewMap(),
+		waitersByPriority: NewSortedMap(func(l, r interface{}) bool {
+			return l.(priority) > r.(priority)
+		}),
 
-		waitersByReason: NewreasonToEntryHandleSet(),
-		waitersByEntry:  NewentryToEntryHandleSet(),
-		waiters:         NewentryHandleSet(),
+		waitersByReason: NewMap(),
+		waitersByEntry:  NewMap(),
+		waiters:         NewSet(),
 	}
 	i.numWaitersChanged.L = &i.mu
 	return i
@@ -95,9 +74,23 @@ func (i *Instance) SetMaxEntries(max int) {
 func (i *Instance) remove(eh *EntryHandle) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
-	if i.entries.DeleteFromSet(eh.e, eh) {
+	var ok bool
+	if i.entries, ok = deleteFromMapToSet(i.entries, eh.e, eh); ok {
 		i.wakeOne()
 	}
+}
+
+func deleteFromMapToSet(m Mappish, mapKey, setElem interface{}) (Mappish, bool) {
+	_s, ok := m.Get(mapKey)
+	if !ok {
+		return m, true
+	}
+	s := _s.(Set)
+	s = s.Delete(setElem)
+	if s.Len() == 0 {
+		return m.Delete(mapKey), true
+	}
+	return m.Set(mapKey, s), false
 }
 
 // Wakes all waiters.
@@ -109,60 +102,56 @@ func (i *Instance) wakeAll() {
 
 // Wakes the highest priority waiter.
 func (i *Instance) wakeOne() {
-	iter := i.waitersByPriority.Iterator()
-	if iter.Done() {
-		return
-	}
-	_, _value := iter.Next()
-	value := _value.(*entryHandleSet)
-	value.Range(func(eh *EntryHandle) bool {
-		i.wakeEntry(eh.e)
+	i.waitersByPriority.Range(func(_, value interface{}) bool {
+		value.(Set).Range(func(elem interface{}) bool {
+			i.wakeEntry(elem.(*EntryHandle).e)
+			return false
+		})
 		return false
 	})
 }
 
 func (i *Instance) deleteWaiter(eh *EntryHandle) {
 	i.waiters = i.waiters.Delete(eh)
-	_p, _ := i.waitersByPriority.Get(eh.priority)
-	p := _p.(*entryHandleSet)
-	p = p.Delete(eh)
-	if p.Len() == 0 {
-		i.waitersByPriority = i.waitersByPriority.Delete(eh.priority)
-	} else {
-		i.waitersByPriority = i.waitersByPriority.Set(eh.priority, p)
-	}
-	i.waitersByReason.DeleteFromSet(eh.reason, eh)
-	i.waitersByEntry.DeleteFromSet(eh.e, eh)
+	i.waitersByPriority, _ = deleteFromMapToSet(i.waitersByPriority, eh.priority, eh)
+	i.waitersByReason, _ = deleteFromMapToSet(i.waitersByReason, eh.reason, eh)
+	i.waitersByEntry, _ = deleteFromMapToSet(i.waitersByEntry, eh.e, eh)
 	i.numWaitersChanged.Broadcast()
 }
 
 func (i *Instance) addWaiter(eh *EntryHandle) {
-	p, ok := i.waitersByPriority.Get(eh.priority)
-	if ok {
-		p = p.(*entryHandleSet).Add(eh)
-	} else {
-		p = NewentryHandleSet(eh)
-	}
-	i.waitersByPriority = i.waitersByPriority.Set(eh.priority, p)
-	i.waitersByReason.AddToSet(eh.reason, eh)
-	i.waitersByEntry.AddToSet(eh.e, eh)
+	i.waitersByPriority = addToMapToSet(i.waitersByPriority, eh.priority, eh)
+	i.waitersByReason = addToMapToSet(i.waitersByReason, eh.reason, eh)
+	i.waitersByEntry = addToMapToSet(i.waitersByEntry, eh.e, eh)
 	i.waiters = i.waiters.Add(eh)
 	i.numWaitersChanged.Broadcast()
+}
+
+func addToMapToSet(m Mappish, mapKey, setElem interface{}) Mappish {
+	s, ok := m.Get(mapKey)
+	if ok {
+		s = s.(Set).Add(setElem)
+	} else {
+		s = NewSet().Add(setElem)
+	}
+	return m.Set(mapKey, s)
 }
 
 // Wakes all waiters on an entry. Note that the entry is also woken
 // immediately, the waiters are all let through.
 func (i *Instance) wakeEntry(e Entry) {
-	if i.entries.Contains(e) {
+	if _, ok := i.entries.Get(e); ok {
 		panic(e)
 	}
-	i.waitersByEntry.Get(e).Range(func(eh *EntryHandle) bool {
-		i.entries.AddToSet(e, eh)
+	ws, _ := i.waitersByEntry.Get(e)
+	ws.(Set).Range(func(_eh interface{}) bool {
+		eh := _eh.(*EntryHandle)
+		i.entries = addToMapToSet(i.entries, e, eh)
 		i.deleteWaiter(eh)
 		eh.wake.Unlock()
 		return true
 	})
-	if i.waitersByEntry.Contains(e) {
+	if _, ok := i.waitersByEntry.Get(e); ok {
 		panic(e)
 	}
 }
@@ -181,14 +170,14 @@ func (i *Instance) Wait(ctx context.Context, e Entry, reason string, p priority)
 		created:  time.Now(),
 	}
 	i.mu.Lock()
-	if i.entries.Contains(eh.e) {
-		i.entries.AddToSet(eh.e, eh)
+	if _, ok := i.entries.Get(eh.e); ok {
+		i.entries = addToMapToSet(i.entries, eh.e, eh)
 		i.mu.Unlock()
 		expvars.Add("waits for existing entry", 1)
 		return
 	}
 	if i.noMaxEntries || i.entries.Len() < i.maxEntries {
-		i.entries.AddToSet(eh.e, eh)
+		i.entries = addToMapToSet(i.entries, eh.e, eh)
 		i.mu.Unlock()
 		expvars.Add("waits with space in table", 1)
 		return
@@ -212,7 +201,7 @@ func (i *Instance) Wait(ctx context.Context, e Entry, reason string, p priority)
 	// Blocks until woken by an Unlock.
 	eh.wake.Lock()
 	i.mu.Lock()
-	if !i.entries.Contains(eh.e) || !i.entries.Get(eh.e).Contains(eh) {
+	if s, ok := i.entries.Get(eh.e); !ok || s.(Set).Contains(eh) {
 		eh = nil
 	}
 	i.mu.Unlock()
@@ -226,16 +215,18 @@ func (i *Instance) PrintStatus(w io.Writer) {
 	fmt.Fprintln(w)
 	fmt.Fprintf(w, "%d waiters:\n", i.waiters.Len())
 	fmt.Fprintf(tw, "num\treason\n")
-	i.waitersByReason.Range(func(r reason, ws *entryHandleSet) bool {
-		fmt.Fprintf(tw, "%d\t%q\n", ws.Len(), r)
+	i.waitersByReason.Range(func(r, ws interface{}) bool {
+		fmt.Fprintf(tw, "%d\t%q\n", ws.(Set).Len(), r.(reason))
 		return true
 	})
 	tw.Flush()
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "handles:")
 	fmt.Fprintf(tw, "protocol\tlocal\tremote\treason\texpires\tcreated\n")
-	i.entries.Range(func(e Entry, hs *entryHandleSet) bool {
-		hs.Range(func(h *EntryHandle) bool {
+	i.entries.Range(func(_e, hs interface{}) bool {
+		e := _e.(Entry)
+		hs.(Set).Range(func(_h interface{}) bool {
+			h := _h.(*EntryHandle)
 			fmt.Fprintf(tw,
 				"%q\t%q\t%q\t%q\t%s\t%v ago\n",
 				e.Protocol, e.LocalAddr, e.RemoteAddr, h.reason,

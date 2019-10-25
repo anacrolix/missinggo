@@ -107,11 +107,11 @@ func TestUnlimitedInstance(t *testing.T) {
 	eh := i.WaitDefault(context.Background(), entry(0))
 	assert.NotNil(t, eh)
 	i.mu.Lock()
-	assert.EqualValues(t, i.entries.Get(eh.e).Len(), 1)
+	assert.EqualValues(t, getLeft(i.entries.Get(eh.e)).(Set).Len(), 1)
 	i.mu.Unlock()
 	eh.Done()
 	i.mu.Lock()
-	assert.Nil(t, i.entries.Get(eh.e))
+	assert.Nil(t, getLeft(i.entries.Get(eh.e)))
 	i.mu.Unlock()
 }
 
@@ -124,11 +124,11 @@ func TestUnlimitedInstanceContextCanceled(t *testing.T) {
 	eh := i.WaitDefault(ctx, entry(0))
 	assert.NotNil(t, eh)
 	i.mu.Lock()
-	assert.EqualValues(t, i.entries.Get(eh.e).Len(), 1)
+	assert.EqualValues(t, getLeft(i.entries.Get(eh.e)).(Set).Len(), 1)
 	i.mu.Unlock()
 	eh.Done()
 	i.mu.Lock()
-	assert.Nil(t, i.entries.Get(eh.e))
+	assert.Nil(t, getLeft(i.entries.Get(eh.e)))
 	i.mu.Unlock()
 }
 
