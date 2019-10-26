@@ -2,7 +2,9 @@ package conntrack
 
 import (
 	"context"
+	"log"
 	"math"
+	"math/rand"
 	"strconv"
 	"sync"
 	"testing"
@@ -162,4 +164,31 @@ func TestRaceWakeAndContextCompletion(t *testing.T) {
 	eh0.Forget()
 	assert.EqualValues(t, stm.AtomicGet(i.entries).(Lenner).Len(), 0)
 	assert.EqualValues(t, stm.AtomicGet(i.waiters).(Lenner).Len(), 0)
+}
+
+func TestPriority(t *testing.T) {
+	i := NewInstance()
+	i.SetMaxEntries(0)
+	ehs := make(chan *EntryHandle)
+	const n = 1000
+	for _, j := range rand.Perm(n) {
+		go func(j int) {
+			ehs <- i.Wait(context.Background(), entry(j), "", priority(j))
+		}(j)
+	}
+	stm.Atomically(func(tx *stm.Tx) {
+		tx.Assert(tx.Get(i.waiters).(Lenner).Len() == n)
+	})
+	select {
+	case <-ehs:
+		panic("non should have passed")
+	default:
+	}
+	i.SetMaxEntries(1)
+	for j := range iter.N(n) {
+		eh := <-ehs
+		assert.EqualValues(t, entry(n-j-1), eh.e)
+		log.Print(eh.priority)
+		eh.Forget()
+	}
 }
