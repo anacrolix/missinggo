@@ -2,7 +2,9 @@ package conntrack
 
 import (
 	"context"
+	"math"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -47,33 +49,30 @@ func TestWaitingForSameEntry(t *testing.T) {
 	<-gotE2s
 }
 
-//
-//func TestInstanceSetNoMaxEntries(t *testing.T) {
-//	i := NewInstance()
-//	i.SetMaxEntries(0)
-//	var wg sync.WaitGroup
-//	wait := func(e Entry, p priority) {
-//		i.Wait(context.Background(), e, "", p)
-//		wg.Done()
-//	}
-//	for _, e := range []Entry{entry(0), entry(1)} {
-//		for _, p := range []priority{math.MinInt32, math.MaxInt32} {
-//			wg.Add(1)
-//			go wait(e, p)
-//		}
-//	}
-//	waitForNumWaiters := func(num int) {
-//		i.mu.Lock()
-//		for i.waiters.Len() != num {
-//			i.numWaitersChanged.Wait()
-//		}
-//		i.mu.Unlock()
-//	}
-//	waitForNumWaiters(4)
-//	i.SetNoMaxEntries()
-//	waitForNumWaiters(0)
-//	wg.Wait()
-//}
+func TestInstanceSetNoMaxEntries(t *testing.T) {
+	i := NewInstance()
+	i.SetMaxEntries(0)
+	var wg sync.WaitGroup
+	wait := func(e Entry, p priority) {
+		i.Wait(context.Background(), e, "", p)
+		wg.Done()
+	}
+	for _, e := range []Entry{entry(0), entry(1)} {
+		for _, p := range []priority{math.MinInt32, math.MaxInt32} {
+			wg.Add(1)
+			go wait(e, p)
+		}
+	}
+	waitForNumWaiters := func(num int) {
+		stm.Atomically(func(tx *stm.Tx) {
+			tx.Assert(tx.Get(i.waiters).(Set).Len() == num)
+		})
+	}
+	waitForNumWaiters(4)
+	i.SetNoMaxEntries()
+	waitForNumWaiters(0)
+	wg.Wait()
+}
 
 func TestWaitReturnsNilContextCompleted(t *testing.T) {
 	i := NewInstance()
@@ -143,26 +142,24 @@ func TestContextCancelledWhileWaiting(t *testing.T) {
 	assert.EqualValues(t, stm.AtomicGet(i.waiters).(Set).Len(), 0)
 }
 
-//func TestRaceWakeAndContextCompletion(t *testing.T) {
-//	i := NewInstance()
-//	i.SetMaxEntries(1)
-//	eh0 := i.WaitDefault(context.Background(), entry(0))
-//	ctx, cancel := context.WithCancel(context.Background())
-//	waitReturned := make(chan struct{})
-//	go func() {
-//		eh1 := i.WaitDefault(ctx, entry(1))
-//		if eh1 != nil {
-//			eh1.Forget()
-//		}
-//		close(waitReturned)
-//	}()
-//	go cancel()
-//	go eh0.Forget()
-//	<-waitReturned
-//	cancel()
-//	eh0.Forget()
-//	i.mu.Lock()
-//	assert.EqualValues(t, i.entries.Len(), 0)
-//	assert.EqualValues(t, i.waiters.Len(), 0)
-//	i.mu.Unlock()
-//}
+func TestRaceWakeAndContextCompletion(t *testing.T) {
+	i := NewInstance()
+	i.SetMaxEntries(1)
+	eh0 := i.WaitDefault(context.Background(), entry(0))
+	ctx, cancel := context.WithCancel(context.Background())
+	waitReturned := make(chan struct{})
+	go func() {
+		eh1 := i.WaitDefault(ctx, entry(1))
+		if eh1 != nil {
+			eh1.Forget()
+		}
+		close(waitReturned)
+	}()
+	go cancel()
+	go eh0.Forget()
+	<-waitReturned
+	cancel()
+	eh0.Forget()
+	assert.EqualValues(t, stm.AtomicGet(i.entries).(Lenner).Len(), 0)
+	assert.EqualValues(t, stm.AtomicGet(i.waiters).(Lenner).Len(), 0)
+}

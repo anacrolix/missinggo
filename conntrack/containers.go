@@ -146,3 +146,7 @@ func nilinterhash(p unsafe.Pointer, h uintptr) uintptr
 func interfaceHash(x interface{}) uint32 {
 	return uint32(nilinterhash(unsafe.Pointer(&x), 0))
 }
+
+type Lenner interface {
+	Len() int
+}
