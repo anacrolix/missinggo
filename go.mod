@@ -13,6 +13,7 @@ require (
 	github.com/google/btree v1.0.0
 	github.com/gopherjs/gopherjs v0.0.0-20190309154008-847fc94819f9 // indirect
 	github.com/huandu/xstrings v1.2.0
+	github.com/lukechampine/stm v0.0.0-20191022212748-05486c32d236 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829
 	github.com/prometheus/client_model v0.0.0-20190115171406-56726106282f
