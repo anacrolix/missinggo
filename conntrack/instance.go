@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/lukechampine/stm"
+
+	"github.com/anacrolix/missinggo/v2/iter"
 )
 
 type reason = string
@@ -136,7 +138,14 @@ func (i *Instance) Wait(ctx context.Context, e Entry, reason string, p priority)
 			success = true
 			return
 		}
-		if tx.Get(i.noMaxEntries).(bool) || es.Len() < tx.Get(i.maxEntries).(int) {
+		haveRoom := tx.Get(i.noMaxEntries).(bool) || es.Len() < tx.Get(i.maxEntries).(int)
+		var topPrio priority
+		if !iter.First(func(prio interface{}) {
+			topPrio = prio.(priority)
+		}, tx.Get(i.waitersByPriority).(iter.Iterable).Iter) {
+			panic("y u no waiting?!")
+		}
+		if haveRoom && p == topPrio {
 			tx.Set(i.entries, addToMapToSet(es, e, eh))
 			success = true
 			return

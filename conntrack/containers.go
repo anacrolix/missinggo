@@ -4,6 +4,8 @@ import (
 	"unsafe"
 
 	"github.com/benbjohnson/immutable"
+
+	"github.com/anacrolix/missinggo/v2/iter"
 )
 
 type Set struct {
@@ -82,6 +84,12 @@ func (sm Map) Range(f func(key, value interface{}) bool) {
 	}
 }
 
+func (sm Map) Iter(cb iter.Callback) {
+	sm.Range(func(key, _ interface{}) bool {
+		return cb(key)
+	})
+}
+
 type SortedMap struct {
 	*immutable.SortedMap
 }
@@ -103,6 +111,12 @@ func (sm SortedMap) Range(f func(key, value interface{}) bool) {
 			return
 		}
 	}
+}
+
+func (sm SortedMap) Iter(cb iter.Callback) {
+	sm.Range(func(key, _ interface{}) bool {
+		return cb(key)
+	})
 }
 
 type lessFunc func(l, r interface{}) bool
@@ -133,6 +147,7 @@ type Mappish interface {
 	Get(key interface{}) (interface{}, bool)
 	Range(func(_, _ interface{}) bool)
 	Len() int
+	iter.Iterable
 }
 
 func getLeft(l, _ interface{}) interface{} {
