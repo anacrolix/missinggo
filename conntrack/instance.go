@@ -2,7 +2,9 @@ package conntrack
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"text/tabwriter"
 	"time"
 
 	"github.com/lukechampine/stm"
@@ -166,40 +168,38 @@ func (i *Instance) Wait(ctx context.Context, e Entry, reason string, p priority)
 }
 
 func (i *Instance) PrintStatus(w io.Writer) {
-	//tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-	//i.mu.Lock()
-	//fmt.Fprintf(w, "num entries: %d\n", i.entries.Len())
-	//fmt.Fprintln(w)
-	//fmt.Fprintf(w, "%d waiters:\n", i.waiters.Len())
-	//fmt.Fprintf(tw, "num\treason\n")
-	//i.waitersByReason.Range(func(r, ws interface{}) bool {
-	//	fmt.Fprintf(tw, "%d\t%q\n", ws.(Set).Len(), r.(reason))
-	//	return true
-	//})
-	//tw.Flush()
-	//fmt.Fprintln(w)
-	//fmt.Fprintln(w, "handles:")
-	//fmt.Fprintf(tw, "protocol\tlocal\tremote\treason\texpires\tcreated\n")
-	//i.entries.Range(func(_e, hs interface{}) bool {
-	//	e := _e.(Entry)
-	//	hs.(Set).Range(func(_h interface{}) bool {
-	//		h := _h.(*EntryHandle)
-	//		fmt.Fprintf(tw,
-	//			"%q\t%q\t%q\t%q\t%s\t%v ago\n",
-	//			e.Protocol, e.LocalAddr, e.RemoteAddr, h.reason,
-	//			func() interface{} {
-	//				if h.expires.IsZero() {
-	//					return "not done"
-	//				} else {
-	//					return time.Until(h.expires)
-	//				}
-	//			}(),
-	//			time.Since(h.created),
-	//		)
-	//		return true
-	//	})
-	//	return true
-	//})
-	//i.mu.Unlock()
-	//tw.Flush()
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	fmt.Fprintf(w, "num entries: %d\n", stm.AtomicGet(i.entries).(Lenner).Len())
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "%d waiters:\n", stm.AtomicGet(i.waiters).(Lenner).Len())
+	fmt.Fprintf(tw, "num\treason\n")
+	stm.AtomicGet(i.waitersByReason).(Mappish).Range(func(r, ws interface{}) bool {
+		fmt.Fprintf(tw, "%d\t%q\n", ws.(Set).Len(), r.(reason))
+		return true
+	})
+	tw.Flush()
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "handles:")
+	fmt.Fprintf(tw, "protocol\tlocal\tremote\treason\texpires\tcreated\n")
+	stm.AtomicGet(i.entries).(Mappish).Range(func(_e, hs interface{}) bool {
+		e := _e.(Entry)
+		hs.(Set).Range(func(_h interface{}) bool {
+			h := _h.(*EntryHandle)
+			fmt.Fprintf(tw,
+				"%q\t%q\t%q\t%q\t%s\t%v ago\n",
+				e.Protocol, e.LocalAddr, e.RemoteAddr, h.reason,
+				func() interface{} {
+					if h.expires.IsZero() {
+						return "not done"
+					} else {
+						return time.Until(h.expires)
+					}
+				}(),
+				time.Since(h.created),
+			)
+			return true
+		})
+		return true
+	})
+	tw.Flush()
 }
