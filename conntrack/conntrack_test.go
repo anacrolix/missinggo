@@ -2,7 +2,6 @@ package conntrack
 
 import (
 	"context"
-	"log"
 	"math"
 	"math/rand"
 	"strconv"
@@ -12,8 +11,9 @@ import (
 
 	_ "github.com/anacrolix/envpprof"
 	"github.com/bradfitz/iter"
-	"github.com/lukechampine/stm"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/lukechampine/stm"
 )
 
 func entry(id int) Entry {
@@ -167,10 +167,13 @@ func TestRaceWakeAndContextCompletion(t *testing.T) {
 }
 
 func TestPriority(t *testing.T) {
+	testPriority(t, 100)
+}
+
+func testPriority(t testing.TB, n int) {
 	i := NewInstance()
 	i.SetMaxEntries(0)
 	ehs := make(chan *EntryHandle)
-	const n = 1000
 	for _, j := range rand.Perm(n) {
 		go func(j int) {
 			ehs <- i.Wait(context.Background(), entry(j), "", priority(j))
@@ -188,7 +191,25 @@ func TestPriority(t *testing.T) {
 	for j := range iter.N(n) {
 		eh := <-ehs
 		assert.EqualValues(t, entry(n-j-1), eh.e)
-		log.Print(eh.priority)
+		//log.Print(eh.priority)
 		eh.Forget()
 	}
+}
+
+func benchmarkPriority(b *testing.B, n int) {
+	for range iter.N(b.N) {
+		testPriority(b, n)
+	}
+}
+
+func BenchmarkPriority1(b *testing.B) {
+	benchmarkPriority(b, 1)
+}
+
+func BenchmarkPriority10(b *testing.B) {
+	benchmarkPriority(b, 10)
+}
+
+func BenchmarkPriority100(b *testing.B) {
+	benchmarkPriority(b, 100)
 }
