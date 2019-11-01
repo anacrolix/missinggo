@@ -157,6 +157,28 @@ func (i *Instance) Wait(ctx context.Context, e Entry, reason string, p priority)
 	return
 }
 
+func (i *Instance) Allow(tx *stm.Tx, e Entry, reason string, p priority) *EntryHandle {
+	eh := &EntryHandle{
+		reason:   reason,
+		e:        e,
+		i:        i,
+		priority: p,
+		created:  time.Now(),
+	}
+	es := tx.Get(i.entries).(stmutil.Mappish)
+	if s, ok := es.Get(e); ok {
+		tx.Set(i.entries, es.Set(e, s.(stmutil.Settish).Add(eh)))
+		return eh
+	}
+	haveRoom := tx.Get(i.noMaxEntries).(bool) || es.Len() < tx.Get(i.maxEntries).(int)
+	topPrio, ok := iter.First(tx.Get(i.waitersByPriority).(iter.Iterable).Iter)
+	if haveRoom && (!ok || p == topPrio) {
+		tx.Set(i.entries, addToMapToSet(es, e, eh))
+		return eh
+	}
+	return nil
+}
+
 func (i *Instance) PrintStatus(w io.Writer) {
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 	fmt.Fprintf(w, "num entries: %d\n", stm.AtomicGet(i.entries).(stmutil.Lenner).Len())
