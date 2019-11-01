@@ -22,11 +22,11 @@ func All(cb Callback, fs ...Func) bool {
 }
 
 // Calls `cb` with the first value yielded by `f` and then stops iteration. `ok` if `cb` was called
-// with a value.
-func First(cb func(value interface{}),f Func) (ok bool) {
-	f(func(value interface{}) bool {
+// with a value. Returning the value interface{} would require the caller to keep a
+func First(f Func) (value interface{}, ok bool) {
+	f(func(x interface{}) bool {
+		value = x
 		ok = true
-		cb(value)
 		return false
 	})
 	return
