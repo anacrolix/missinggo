@@ -36,9 +36,6 @@ func (me *MultiLess) Next(f SameLessFunc) {
 }
 
 func (me *MultiLess) StrictNext(same, less bool) {
-	if me.ok {
-		return
-	}
 	me.Next(func() (bool, bool) { return same, less })
 }
 
