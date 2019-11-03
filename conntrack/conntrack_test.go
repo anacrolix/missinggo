@@ -13,8 +13,8 @@ import (
 	"github.com/bradfitz/iter"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lukechampine/stm"
-	"github.com/lukechampine/stm/stmutil"
+	"github.com/anacrolix/stm"
+	"github.com/anacrolix/stm/stmutil"
 )
 
 func entry(id int) Entry {

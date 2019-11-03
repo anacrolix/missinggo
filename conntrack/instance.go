@@ -7,8 +7,8 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/lukechampine/stm"
-	"github.com/lukechampine/stm/stmutil"
+	"github.com/anacrolix/stm"
+	"github.com/anacrolix/stm/stmutil"
 
 	"github.com/anacrolix/missinggo/v2/iter"
 )
