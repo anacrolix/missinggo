@@ -1,15 +1,20 @@
 package conntrack
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
+	"net"
+	"sort"
+	"strconv"
 	"text/tabwriter"
 	"time"
 
 	"github.com/anacrolix/stm"
 	"github.com/anacrolix/stm/stmutil"
 
+	"github.com/anacrolix/missinggo/v2"
 	"github.com/anacrolix/missinggo/v2/iter"
 )
 
@@ -179,6 +184,20 @@ func (i *Instance) Allow(tx *stm.Tx, e Entry, reason string, p priority) *EntryH
 	return nil
 }
 
+func parseHostPort(hostport string) (ret struct {
+	hostportErr error
+	host        string
+	hostIp      net.IP
+	port        string
+	portInt64   int64
+	portIntErr  error
+}) {
+	ret.host, ret.port, ret.hostportErr = net.SplitHostPort(hostport)
+	ret.hostIp = net.ParseIP(ret.host)
+	ret.portInt64, ret.portIntErr = strconv.ParseInt(ret.port, 0, 64)
+	return
+}
+
 func (i *Instance) PrintStatus(w io.Writer) {
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 	fmt.Fprintf(w, "num entries: %d\n", stm.AtomicGet(i.entries).(stmutil.Lenner).Len())
@@ -193,9 +212,38 @@ func (i *Instance) PrintStatus(w io.Writer) {
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "handles:")
 	fmt.Fprintf(tw, "protocol\tlocal\tremote\treason\texpires\tcreated\n")
-	stm.AtomicGet(i.entries).(stmutil.Mappish).Range(func(_e, hs interface{}) bool {
-		e := _e.(Entry)
-		hs.(stmutil.Settish).Range(func(_h interface{}) bool {
+	entries := stm.AtomicGet(i.entries).(stmutil.Mappish)
+	type entriesItem struct {
+		Entry
+		stmutil.Settish
+	}
+	entriesItems := make([]entriesItem, 0, entries.Len())
+	entries.Range(func(e, hs interface{}) bool {
+		entriesItems = append(entriesItems, entriesItem{e.(Entry), hs.(stmutil.Settish)})
+		return true
+	})
+	sort.Slice(entriesItems, func(i, j int) bool {
+		l := entriesItems[i].Entry
+		r := entriesItems[j].Entry
+		var ml missinggo.MultiLess
+		f := func(l, r string) {
+			pl := parseHostPort(l)
+			pr := parseHostPort(r)
+			ml.NextBool(pl.hostportErr != nil, pr.hostportErr != nil)
+			ml.NextBool(pl.hostIp.To4() == nil, pr.hostIp.To4() == nil)
+			ml.Compare(bytes.Compare(pl.hostIp, pr.hostIp))
+			ml.NextBool(pl.portIntErr != nil, pr.portIntErr != nil)
+			ml.StrictNext(pl.portInt64 == pr.portInt64, pl.portInt64 < pr.portInt64)
+			ml.StrictNext(pl.port == pr.port, pl.port < pr.port)
+		}
+		f(l.RemoteAddr, r.RemoteAddr)
+		ml.StrictNext(l.Protocol == r.Protocol, l.Protocol < r.Protocol)
+		f(l.LocalAddr, r.LocalAddr)
+		return ml.Less()
+	})
+	for _, ei := range entriesItems {
+		e := ei.Entry
+		ei.Settish.Range(func(_h interface{}) bool {
 			h := _h.(*EntryHandle)
 			fmt.Fprintf(tw,
 				"%q\t%q\t%q\t%q\t%s\t%v ago\n",
@@ -211,7 +259,6 @@ func (i *Instance) PrintStatus(w io.Writer) {
 			)
 			return true
 		})
-		return true
-	})
+	}
 	tw.Flush()
 }
