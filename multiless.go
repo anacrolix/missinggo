@@ -52,3 +52,8 @@ func (me *MultiLess) StrictNext(same, less bool) {
 func (me *MultiLess) NextBool(l, r bool) {
 	me.StrictNext(l == r, l)
 }
+
+// Next use a common comparison result, where < 0 is less and 0 is equal.
+func (me *MultiLess) Compare(i int) {
+	me.StrictNext(i == 0, i < 0)
+}
