@@ -67,9 +67,9 @@ func TestInstanceSetNoMaxEntries(t *testing.T) {
 		}
 	}
 	waitForNumWaiters := func(num int) {
-		stm.Atomically(func(tx *stm.Tx) {
+		stm.Atomically(stm.VoidOperation(func(tx *stm.Tx) {
 			tx.Assert(tx.Get(i.waiters).(stmutil.Settish).Len() == num)
-		})
+		}))
 	}
 	waitForNumWaiters(4)
 	i.SetNoMaxEntries()
@@ -136,9 +136,9 @@ func TestContextCancelledWhileWaiting(t *testing.T) {
 		assert.Nil(t, eh)
 		close(waitReturned)
 	}()
-	stm.Atomically(func(tx *stm.Tx) {
+	stm.Atomically(stm.VoidOperation(func(tx *stm.Tx) {
 		tx.Assert(tx.Get(i.waiters).(stmutil.Settish).Len() == 1)
-	})
+	}))
 	cancel()
 	<-waitReturned
 	assert.EqualValues(t, stm.AtomicGet(i.entries).(stmutil.Mappish).Len(), 0)
@@ -180,9 +180,9 @@ func testPriority(t testing.TB, n int) {
 			ehs <- i.Wait(context.Background(), entry(j), "", priority(j))
 		}(j)
 	}
-	stm.Atomically(func(tx *stm.Tx) {
+	stm.Atomically(stm.VoidOperation(func(tx *stm.Tx) {
 		tx.Assert(tx.Get(i.waiters).(stmutil.Lenner).Len() == n)
-	})
+	}))
 	select {
 	case <-ehs:
 		panic("non should have passed")

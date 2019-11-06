@@ -65,16 +65,17 @@ func (i *Instance) SetNoMaxEntries() {
 }
 
 func (i *Instance) SetMaxEntries(max int) {
-	stm.Atomically(func(tx *stm.Tx) {
+	stm.Atomically(stm.VoidOperation(func(tx *stm.Tx) {
 		tx.Set(i.noMaxEntries, false)
 		tx.Set(i.maxEntries, max)
-	})
+	}))
 }
 
 func (i *Instance) remove(eh *EntryHandle) {
-	stm.Atomically(func(tx *stm.Tx) {
+	stm.Atomically(func(tx *stm.Tx) interface{} {
 		es, _ := deleteFromMapToSet(tx.Get(i.entries).(stmutil.Mappish), eh.e, eh)
 		tx.Set(i.entries, es)
+		return nil
 	})
 }
 
@@ -99,12 +100,12 @@ func (i *Instance) deleteWaiter(eh *EntryHandle, tx *stm.Tx) {
 }
 
 func (i *Instance) addWaiter(eh *EntryHandle) {
-	stm.Atomically(func(tx *stm.Tx) {
+	stm.Atomically(stm.VoidOperation(func(tx *stm.Tx) {
 		tx.Set(i.waitersByPriority, addToMapToSet(tx.Get(i.waitersByPriority).(stmutil.Mappish), eh.priority, eh))
 		tx.Set(i.waitersByReason, addToMapToSet(tx.Get(i.waitersByReason).(stmutil.Mappish), eh.reason, eh))
 		tx.Set(i.waitersByEntry, addToMapToSet(tx.Get(i.waitersByEntry).(stmutil.Mappish), eh.e, eh))
 		tx.Set(i.waiters, tx.Get(i.waiters).(stmutil.Settish).Add(eh))
-	})
+	}))
 }
 
 func addToMapToSet(m stmutil.Mappish, mapKey, setElem interface{}) stmutil.Mappish {
@@ -133,11 +134,11 @@ func (i *Instance) Wait(ctx context.Context, e Entry, reason string, p priority)
 	i.addWaiter(eh)
 	ctxDone, cancel := stmutil.ContextDoneVar(ctx)
 	defer cancel()
-	success := stm.Atomically(func(tx *stm.Tx) {
+	success := stm.Atomically(func(tx *stm.Tx) interface{} {
 		es := tx.Get(i.entries).(stmutil.Mappish)
 		if s, ok := es.Get(e); ok {
 			tx.Set(i.entries, es.Set(e, s.(stmutil.Settish).Add(eh)))
-			tx.Return(true)
+			return true
 		}
 		haveRoom := tx.Get(i.noMaxEntries).(bool) || es.Len() < tx.Get(i.maxEntries).(int)
 		topPrio, ok := iter.First(tx.Get(i.waitersByPriority).(iter.Iterable).Iter)
@@ -146,16 +147,17 @@ func (i *Instance) Wait(ctx context.Context, e Entry, reason string, p priority)
 		}
 		if haveRoom && p == topPrio {
 			tx.Set(i.entries, addToMapToSet(es, e, eh))
-			tx.Return(true)
+			return true
 		}
 		if tx.Get(ctxDone).(bool) {
-			tx.Return(false)
+			return false
 		}
 		tx.Retry()
+		panic("unreachable")
 	}).(bool)
-	stm.Atomically(func(tx *stm.Tx) {
+	stm.Atomically(stm.VoidOperation(func(tx *stm.Tx) {
 		i.deleteWaiter(eh, tx)
-	})
+	}))
 	if !success {
 		eh = nil
 	}
