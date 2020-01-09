@@ -3,7 +3,7 @@ module github.com/anacrolix/missinggo/v2
 require (
 	github.com/RoaringBitmap/roaring v0.4.17
 	github.com/anacrolix/envpprof v1.0.0
-	github.com/anacrolix/log v0.5.0
+	github.com/anacrolix/log v0.4.0
 	github.com/anacrolix/missinggo v1.2.1
 	github.com/anacrolix/stm v0.2.0
 	github.com/anacrolix/tagflag v1.0.0
