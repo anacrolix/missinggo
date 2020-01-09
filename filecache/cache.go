@@ -2,15 +2,16 @@ package filecache
 
 import (
 	"errors"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
 	"sync"
 	"time"
 
+	"github.com/anacrolix/log"
+
 	"github.com/anacrolix/missinggo/pproffd"
-	"github.com/anacrolix/missinggo/resource"
+	"github.com/anacrolix/missinggo/v2/resource"
 )
 
 const (

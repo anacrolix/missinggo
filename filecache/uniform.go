@@ -3,8 +3,9 @@ package filecache
 import (
 	"io"
 	"os"
+	"strings"
 
-	"github.com/anacrolix/missinggo/resource"
+	"github.com/anacrolix/missinggo/v2/resource"
 )
 
 type uniformResourceProvider struct {
@@ -60,4 +61,16 @@ func (me *uniformResource) Stat() (fi os.FileInfo, err error) {
 
 func (me *uniformResource) Delete() error {
 	return me.Cache.Remove(me.Location)
+}
+
+func (me *uniformResource) Readdirnames() (names []string, err error) {
+	prefix := me.Location + "/"
+	me.Cache.WalkItems(func(info ItemInfo) {
+		//log.Printf("%q %q", me.Location, info.Path)
+		name := string(info.Path)
+		if strings.HasPrefix(name, prefix) {
+			names = append(names, name[len(prefix):])
+		}
+	})
+	return
 }
