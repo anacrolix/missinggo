@@ -104,7 +104,7 @@ func (me *Bitmap) Union(other Bitmap) {
 	me.lazyRB().Or(other.lazyRB())
 }
 
-func (me *Bitmap) Contains(i int) bool {
+func (me Bitmap) Contains(i int) bool {
 	if me.RB == nil {
 		return false
 	}
@@ -140,7 +140,7 @@ func (me *Bitmap) FlipRange(begin, end BitIndex) {
 	me.lazyRB().FlipInt(begin, end)
 }
 
-func (me *Bitmap) Get(bit BitIndex) bool {
+func (me Bitmap) Get(bit BitIndex) bool {
 	return me.RB != nil && me.RB.ContainsInt(bit)
 }
 
