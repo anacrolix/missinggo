@@ -28,7 +28,7 @@ type Bitmap struct {
 var ToEnd int = -1
 
 // The number of set bits in the bitmap. Also known as cardinality.
-func (me *Bitmap) Len() int {
+func (me Bitmap) Len() int {
 	if me.RB == nil {
 		return 0
 	}
