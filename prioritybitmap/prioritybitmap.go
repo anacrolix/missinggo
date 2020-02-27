@@ -12,11 +12,11 @@ import (
 var bitSets = sync.Pool{}
 
 type Set interface {
-	has(int) bool
-	delete(int)
-	len() int
-	set(int)
-	range_(func(int) bool)
+	Has(bit int) bool
+	Delete(bit int)
+	Len() int
+	Set(bit int)
+	Range(f func(int) bool)
 }
 
 // Maintains set of ints ordered by priority.
@@ -55,11 +55,11 @@ func (me *PriorityBitmap) deleteBit(bit int) (priority int, ok bool) {
 			panic("invariant broken")
 		}
 	case Set:
-		if !v.has(bit) {
+		if !v.Has(bit) {
 			panic("invariant broken")
 		}
-		v.delete(bit)
-		if v.len() != 0 {
+		v.Delete(bit)
+		if v.Len() != 0 {
 			return
 		}
 		bitSets.Put(v)
@@ -87,24 +87,24 @@ type mapSet struct {
 	m map[int]struct{}
 }
 
-func (m mapSet) has(bit int) bool {
+func (m mapSet) Has(bit int) bool {
 	_, ok := m.m[bit]
 	return ok
 }
 
-func (m mapSet) delete(bit int) {
+func (m mapSet) Delete(bit int) {
 	delete(m.m, bit)
 }
 
-func (m mapSet) len() int {
+func (m mapSet) Len() int {
 	return len(m.m)
 }
 
-func (m mapSet) set(bit int) {
+func (m mapSet) Set(bit int) {
 	m.m[bit] = struct{}{}
 }
 
-func (m mapSet) range_(f func(int) bool) {
+func (m mapSet) Range(f func(int) bool) {
 	for bit := range m.m {
 		if !f(bit) {
 			break
@@ -146,11 +146,11 @@ func (me *PriorityBitmap) Set(bit int, priority int) bool {
 				return i.(Set)
 			}
 		}()
-		newV.set(v)
-		newV.set(bit)
+		newV.Set(v)
+		newV.Set(bit)
 		me.om.Set(priority, newV)
 	case Set:
-		v.set(bit)
+		v.Set(bit)
 	default:
 		panic(v)
 	}
@@ -190,7 +190,7 @@ func (me *PriorityBitmap) IterTyped(_f func(i bitmap.BitIndex) bool) bool {
 		case int:
 			return f(v)
 		case Set:
-			v.range_(func(i int) bool {
+			v.Range(func(i int) bool {
 				return f(i)
 			})
 		default:
