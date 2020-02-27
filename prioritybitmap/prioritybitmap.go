@@ -9,8 +9,7 @@ import (
 	"github.com/anacrolix/missinggo/orderedmap"
 )
 
-var bitSets = sync.Pool{}
-
+// The interface used for non-singleton bit-sets for each priority level.
 type Set interface {
 	Has(bit int) bool
 	Delete(bit int)
@@ -25,7 +24,9 @@ type PriorityBitmap struct {
 	om orderedmap.OrderedMap
 	// From bit index to priority
 	priorities map[int]int
-	NewSet     func() Set
+	// If not set, is initialized to the default map[int]struct{} implementation on first use.
+	NewSet  func() Set
+	bitSets sync.Pool
 }
 
 var _ bitmap.Interface = (*PriorityBitmap)(nil)
@@ -62,7 +63,7 @@ func (me *PriorityBitmap) deleteBit(bit int) (priority int, ok bool) {
 		if v.Len() != 0 {
 			return
 		}
-		bitSets.Put(v)
+		me.bitSets.Put(v)
 	default:
 		panic(v)
 	}
@@ -75,41 +76,6 @@ func (me *PriorityBitmap) deleteBit(bit int) (priority int, ok bool) {
 
 func bitLess(l, r interface{}) bool {
 	return l.(int) < r.(int)
-}
-
-func newMapSet() Set {
-	return mapSet{
-		m: make(map[int]struct{}),
-	}
-}
-
-type mapSet struct {
-	m map[int]struct{}
-}
-
-func (m mapSet) Has(bit int) bool {
-	_, ok := m.m[bit]
-	return ok
-}
-
-func (m mapSet) Delete(bit int) {
-	delete(m.m, bit)
-}
-
-func (m mapSet) Len() int {
-	return len(m.m)
-}
-
-func (m mapSet) Set(bit int) {
-	m.m[bit] = struct{}{}
-}
-
-func (m mapSet) Range(f func(int) bool) {
-	for bit := range m.m {
-		if !f(bit) {
-			break
-		}
-	}
 }
 
 // Returns true if the priority is changed, or the bit wasn't present.
@@ -136,7 +102,7 @@ func (me *PriorityBitmap) Set(bit int, priority int) bool {
 	switch v := _v.(type) {
 	case int:
 		newV := func() Set {
-			i := bitSets.Get()
+			i := me.bitSets.Get()
 			if i == nil {
 				if me.NewSet == nil {
 					me.NewSet = newMapSet
