@@ -21,27 +21,32 @@ func init() {
 type fd int
 
 func (me *fd) Closed() {
-	p.Remove(me)
+	if enabled {
+		p.Remove(me)
+	}
 }
 
 func add(skip int) (ret *fd) {
-	ret = new(fd)
-	p.Add(ret, skip+2)
+	if enabled {
+		ret = new(fd)
+		p.Add(ret, skip+2)
+	}
 	return
 }
 
-type closeWrapper struct {
+type CloseWrapper struct {
 	fd *fd
 	c  io.Closer
 }
 
-func (me closeWrapper) Close() error {
+func (me CloseWrapper) Close() error {
 	me.fd.Closed()
 	return me.c.Close()
 }
 
-func newCloseWrapper(c io.Closer) closeWrapper {
-	return closeWrapper{
+func NewCloseWrapper(c io.Closer) CloseWrapper {
+	// TODO: Check enabled?
+	return CloseWrapper{
 		fd: add(2),
 		c:  c,
 	}
@@ -49,11 +54,11 @@ func newCloseWrapper(c io.Closer) closeWrapper {
 
 type wrappedNetConn struct {
 	net.Conn
-	closeWrapper
+	CloseWrapper
 }
 
 func (me wrappedNetConn) Close() error {
-	return me.closeWrapper.Close()
+	return me.CloseWrapper.Close()
 }
 
 // Tracks a net.Conn until Close() is explicitly called.
@@ -66,7 +71,7 @@ func WrapNetConn(nc net.Conn) net.Conn {
 	}
 	return wrappedNetConn{
 		nc,
-		newCloseWrapper(nc),
+		NewCloseWrapper(nc),
 	}
 }
 
@@ -82,16 +87,16 @@ type OSFile interface {
 
 type wrappedOSFile struct {
 	*os.File
-	closeWrapper
+	CloseWrapper
 }
 
 func (me wrappedOSFile) Close() error {
-	return me.closeWrapper.Close()
+	return me.CloseWrapper.Close()
 }
 
 func WrapOSFile(f *os.File) OSFile {
 	if !enabled {
 		return f
 	}
-	return &wrappedOSFile{f, newCloseWrapper(f)}
+	return &wrappedOSFile{f, NewCloseWrapper(f)}
 }
