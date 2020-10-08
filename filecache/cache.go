@@ -95,7 +95,7 @@ func sanitizePath(p string) (ret key) {
 	return
 }
 
-// Leaf is a descendent of root.
+// Leaf is a descendant of root.
 func pruneEmptyDirs(root string, leaf string) (err error) {
 	rootInfo, err := os.Stat(root)
 	if err != nil {
