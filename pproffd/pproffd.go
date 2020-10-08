@@ -37,9 +37,17 @@ func add(skip int) (ret *fd) {
 	return
 }
 
+type Wrapped interface {
+	Wrapped() io.Closer
+}
+
 type CloseWrapper struct {
 	fd *fd
 	c  io.Closer
+}
+
+func (me CloseWrapper) Wrapped() io.Closer {
+	return me.c
 }
 
 func (me CloseWrapper) Close() error {
@@ -86,6 +94,7 @@ type OSFile interface {
 	Stat() (os.FileInfo, error)
 	io.ReaderAt
 	io.WriterAt
+	Wrapped
 }
 
 type wrappedOSFile struct {
@@ -97,9 +106,17 @@ func (me wrappedOSFile) Close() error {
 	return me.CloseWrapper.Close()
 }
 
+type unwrappedOsFile struct {
+	*os.File
+}
+
+func (me unwrappedOsFile) Wrapped() io.Closer {
+	return me.File
+}
+
 func WrapOSFile(f *os.File) OSFile {
 	if !enabled {
-		return f
+		return unwrappedOsFile{f}
 	}
 	return &wrappedOSFile{f, NewCloseWrapper(f)}
 }
