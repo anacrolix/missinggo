@@ -17,7 +17,7 @@ type googleBTreeItem struct {
 }
 
 func (me googleBTreeItem) Less(right btree.Item) bool {
-	return me.less(me.key, right.(*googleBTreeItem).key)
+	return me.less(me.key, right.(googleBTreeItem).key)
 }
 
 func NewGoogleBTree(lesser func(l, r interface{}) bool) *GoogleBTree {
@@ -28,7 +28,7 @@ func NewGoogleBTree(lesser func(l, r interface{}) bool) *GoogleBTree {
 }
 
 func (me *GoogleBTree) Set(key interface{}, value interface{}) {
-	me.bt.ReplaceOrInsert(&googleBTreeItem{me.lesser, key, value})
+	me.bt.ReplaceOrInsert(googleBTreeItem{me.lesser, key, value})
 }
 
 func (me *GoogleBTree) Get(key interface{}) interface{} {
@@ -37,11 +37,11 @@ func (me *GoogleBTree) Get(key interface{}) interface{} {
 }
 
 func (me *GoogleBTree) GetOk(key interface{}) (interface{}, bool) {
-	item := me.bt.Get(&googleBTreeItem{me.lesser, key, nil})
+	item := me.bt.Get(googleBTreeItem{me.lesser, key, nil})
 	if item == nil {
 		return nil, false
 	}
-	return item.(*googleBTreeItem).value, true
+	return item.(googleBTreeItem).value, true
 }
 
 type googleBTreeIter struct {
@@ -76,7 +76,7 @@ func (me *googleBTreeIter) Next() bool {
 }
 
 func (me *googleBTreeIter) Value() interface{} {
-	return me.i.(*googleBTreeItem).value
+	return me.i.(googleBTreeItem).value
 }
 
 func (me *googleBTreeIter) Stop() {
@@ -86,12 +86,12 @@ func (me *googleBTreeIter) Stop() {
 
 func (me *GoogleBTree) Iter(f iter.Callback) {
 	me.bt.Ascend(func(i btree.Item) bool {
-		return f(i.(*googleBTreeItem).key)
+		return f(i.(googleBTreeItem).key)
 	})
 }
 
 func (me *GoogleBTree) Unset(key interface{}) {
-	me.bt.Delete(&googleBTreeItem{me.lesser, key, nil})
+	me.bt.Delete(googleBTreeItem{me.lesser, key, nil})
 }
 
 func (me *GoogleBTree) Len() int {
