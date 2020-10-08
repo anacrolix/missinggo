@@ -10,7 +10,7 @@ import (
 
 	"github.com/anacrolix/log"
 
-	"github.com/anacrolix/missinggo/pproffd"
+	"github.com/anacrolix/missinggo/v2/pproffd"
 	"github.com/anacrolix/missinggo/v2/resource"
 )
 
