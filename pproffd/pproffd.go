@@ -8,7 +8,10 @@ import (
 	"runtime/pprof"
 )
 
-const enabled = false
+var enabled = func() bool {
+	_, ok := os.LookupEnv("PPROFFD")
+	return ok
+}()
 
 var p *pprof.Profile
 
