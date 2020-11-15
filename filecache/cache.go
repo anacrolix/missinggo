@@ -26,7 +26,6 @@ type Cache struct {
 	filled   int64
 	policy   Policy
 	items    map[key]itemState
-	dirMu    sync.Mutex
 }
 
 type CacheInfo struct {
@@ -149,10 +148,8 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 	f, err := os.OpenFile(me.realpath(key), flag, filePerm)
 	if flag&os.O_CREATE != 0 && os.IsNotExist(err) {
 		// Ensure intermediate directories and try again.
-		me.dirMu.Lock()
 		dirErr := os.MkdirAll(filepath.Dir(me.realpath(key)), dirPerm)
 		f, err = os.OpenFile(me.realpath(key), flag, filePerm)
-		me.dirMu.Unlock()
 		if dirErr != nil && os.IsNotExist(err) {
 			return nil, dirErr
 		}
@@ -270,8 +267,6 @@ func (me *Cache) TrimToCapacity() {
 }
 
 func (me *Cache) pruneEmptyDirs(path key) {
-	me.dirMu.Lock()
-	defer me.dirMu.Unlock()
 	pruneEmptyDirs(me.root, me.realpath(path))
 }
 
@@ -309,13 +304,11 @@ func (me *Cache) Rename(from, to string) (err error) {
 	_to := sanitizePath(to)
 	me.mu.Lock()
 	defer me.mu.Unlock()
-	me.dirMu.Lock()
 	err = os.MkdirAll(filepath.Dir(me.realpath(_to)), dirPerm)
 	if err != nil {
 		return
 	}
 	err = os.Rename(me.realpath(_from), me.realpath(_to))
-	me.dirMu.Unlock()
 	if err != nil {
 		return
 	}
