@@ -6,6 +6,7 @@ import (
 	"path"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/anacrolix/log"
@@ -139,22 +140,43 @@ func (me *Cache) StatFile(path string) (os.FileInfo, error) {
 	return os.Stat(me.realpath(sanitizePath(path)))
 }
 
+func isMissingDir(err error) bool {
+	// I'm not sure why we get EINVAL for missing path components sometimes. It happens on MacOS. I
+	// wonder if it would happen the same on other OS.
+	return errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOENT)
+}
+
 func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 	key := sanitizePath(path)
 	if key == "" {
 		err = ErrIsDir
 		return
 	}
-	f, err := os.OpenFile(me.realpath(key), flag, filePerm)
-	if flag&os.O_CREATE != 0 && os.IsNotExist(err) {
-		// Ensure intermediate directories and try again.
-		dirErr := os.MkdirAll(filepath.Dir(me.realpath(key)), dirPerm)
-		f, err = os.OpenFile(me.realpath(key), flag, filePerm)
-		if dirErr != nil && os.IsNotExist(err) {
-			return nil, dirErr
+	filePath := me.realpath(key)
+	f, err := os.OpenFile(filePath, flag, filePerm)
+	// Ensure intermediate directories and try again.
+	if flag&os.O_CREATE != 0 && isMissingDir(err) {
+		dirPath := filepath.Dir(filePath)
+		if dirPath == "" {
+			panic(key)
 		}
-		if err != nil {
-			go me.pruneEmptyDirs(key)
+		defer func() {
+			if err != nil {
+				go me.pruneEmptyDirs(key)
+			}
+		}()
+		for {
+			err = os.MkdirAll(dirPath, dirPerm)
+			if isMissingDir(err) {
+				continue
+			} else if err != nil {
+				return
+			}
+			f, err = os.OpenFile(filePath, flag, filePerm)
+			if isMissingDir(err) {
+				continue
+			}
+			break
 		}
 	}
 	if err != nil {
