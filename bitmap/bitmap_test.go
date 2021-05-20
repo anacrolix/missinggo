@@ -48,13 +48,13 @@ func TestSub(t *testing.T) {
 	var left, right Bitmap
 	left.Add(2, 5, 4)
 	right.Add(3, 2, 6)
-	assert.Equal(t, []int{4, 5}, Sub(left, right).ToSortedSlice())
-	assert.Equal(t, []int{3, 6}, Sub(right, left).ToSortedSlice())
+	assert.Equal(t, []BitIndex{4, 5}, Sub(left, right).ToSortedSlice())
+	assert.Equal(t, []BitIndex{3, 6}, Sub(right, left).ToSortedSlice())
 }
 
 func TestSubUninited(t *testing.T) {
 	var left, right Bitmap
-	assert.EqualValues(t, []int(nil), Sub(left, right).ToSortedSlice())
+	assert.Empty(t, Sub(left, right).ToSortedSlice())
 }
 
 func TestAddRange(t *testing.T) {
@@ -63,14 +63,14 @@ func TestAddRange(t *testing.T) {
 	bm.AddRange(9, 14)
 	bm.AddRange(11, 16)
 	bm.Remove(12)
-	assert.EqualValues(t, []int{9, 10, 11, 13, 14, 15, 21, 22, 23, 24, 25}, bm.ToSortedSlice())
+	assert.EqualValues(t, []BitIndex{9, 10, 11, 13, 14, 15, 21, 22, 23, 24, 25}, bm.ToSortedSlice())
 	assert.EqualValues(t, 11, bm.Len())
 	bm.Clear()
 	bm.AddRange(3, 7)
 	bm.AddRange(0, 3)
 	bm.AddRange(2, 4)
 	bm.Remove(3)
-	assert.EqualValues(t, []int{0, 1, 2, 4, 5, 6}, bm.ToSortedSlice())
+	assert.EqualValues(t, []BitIndex{0, 1, 2, 4, 5, 6}, bm.ToSortedSlice())
 	assert.EqualValues(t, 6, bm.Len())
 }
 
@@ -78,11 +78,11 @@ func TestRemoveRange(t *testing.T) {
 	var bm Bitmap
 	bm.AddRange(3, 12)
 	assert.EqualValues(t, 9, bm.Len())
-	bm.RemoveRange(14, -1)
+	bm.RemoveRange(14, ToEnd)
 	assert.EqualValues(t, 9, bm.Len())
 	bm.RemoveRange(2, 5)
 	assert.EqualValues(t, 7, bm.Len())
-	bm.RemoveRange(10, -1)
+	bm.RemoveRange(10, ToEnd)
 	assert.EqualValues(t, 5, bm.Len())
 }
 
@@ -95,9 +95,9 @@ func TestLimits(t *testing.T) {
 
 	//assert.Panics(t, func() { bm.Add(math.MaxInt64) })
 
-	bm.Add(-1)
+	bm.Add(MaxInt)
 	assert.EqualValues(t, 1, bm.Len())
-	assert.EqualValues(t, []int{MaxInt}, bm.ToSortedSlice())
+	assert.EqualValues(t, []BitIndex{MaxInt}, bm.ToSortedSlice())
 }
 
 func TestRoaringRangeEnd(t *testing.T) {
