@@ -1,4 +1,4 @@
-package expect // import "github.com/anacrolix/missinggo/expect"
+package expect // import "github.com/anacrolix/missinggo/v2/expect"
 
 import (
 	"database/sql"
