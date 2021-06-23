@@ -14,8 +14,8 @@ import (
 	"github.com/anacrolix/tagflag"
 	"github.com/dustin/go-humanize"
 
-	"github.com/anacrolix/missinggo"
 	"github.com/anacrolix/missinggo/filecache"
+	"github.com/anacrolix/missinggo/v2"
 )
 
 var c *filecache.Cache

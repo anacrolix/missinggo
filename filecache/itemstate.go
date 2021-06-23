@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/anacrolix/missinggo"
+	"github.com/anacrolix/missinggo/v2"
 )
 
 type itemState struct {

@@ -4,7 +4,7 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/anacrolix/missinggo"
+	"github.com/anacrolix/missinggo/v2"
 )
 
 // Request is intended for localhost, either with a localhost name, or
