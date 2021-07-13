@@ -12,9 +12,8 @@ type Event struct {
 
 func (me *Event) LockedChan(lock sync.Locker) <-chan struct{} {
 	lock.Lock()
-	ch := me.C()
-	lock.Unlock()
-	return ch
+	defer lock.Unlock()
+	return me.C()
 }
 
 // Returns a chan that is closed when the event is true.
