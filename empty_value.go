@@ -1,3 +1,6 @@
+//go:build !go1.18
+// +build !go1.18
+
 package missinggo
 
 import "reflect"
@@ -24,7 +27,7 @@ func IsEmptyValue(v reflect.Value) bool {
 		z := true
 		vType := v.Type()
 		for i := 0; i < v.NumField(); i++ {
-			//ignore unexported fields to avoid reflection panics
+			// ignore unexported fields to avoid reflection panics
 			if !vType.Field(i).IsExported() {
 				continue
 			}

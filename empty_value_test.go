@@ -1,15 +1,14 @@
 package missinggo
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEmptyValue(t *testing.T) {
-	assert.True(t, IsEmptyValue(reflect.ValueOf(false)))
-	assert.False(t, IsEmptyValue(reflect.ValueOf(true)))
+	assert.True(t, IsZeroValue(false))
+	assert.False(t, IsZeroValue(true))
 }
 
 func TestUnexportedField(t *testing.T) {
@@ -20,12 +19,12 @@ func TestUnexportedField(t *testing.T) {
 	}
 	fooInstance := FooType1{}
 
-	assert.True(t, IsEmptyValue(reflect.ValueOf(fooInstance)))
+	assert.True(t, IsZeroValue(fooInstance))
 
 	fooInstance2 := FooType1{fish: "fishy"}
-	assert.True(t, IsEmptyValue(reflect.ValueOf(fooInstance2)))
+	assert.False(t, IsZeroValue(fooInstance2))
 
 	fooInstance3 := FooType1{Bar: 5}
 
-	assert.False(t, IsEmptyValue(reflect.ValueOf(fooInstance3)))
+	assert.False(t, IsZeroValue(fooInstance3))
 }
