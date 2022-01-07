@@ -25,7 +25,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/tinylib/msgp v1.1.2 // indirect
 	go.opencensus.io v0.22.3
-	golang.org/x/sys v0.0.0-20200413165638-669c56c373c4 // indirect
+	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 )
 
 go 1.13
