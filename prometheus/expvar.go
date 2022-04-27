@@ -36,6 +36,11 @@ func (e expvarCollector) Describe(ch chan<- *prometheus.Desc) {
 // Collect implements Collector.
 func (e expvarCollector) Collect(ch chan<- prometheus.Metric) {
 	expvar.Do(func(kv expvar.KeyValue) {
+		// I think this is very noisy, and there seems to be good support for exporting its
+		// information in a more structured way.
+		if kv.Key == "memstats" {
+			return
+		}
 		collector{
 			f: func(m prometheus.Metric) {
 				ch <- m
