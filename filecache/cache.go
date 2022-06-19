@@ -8,6 +8,7 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	"io/fs"
 
 	"github.com/anacrolix/log"
 
@@ -143,7 +144,7 @@ func (me *Cache) StatFile(path string) (os.FileInfo, error) {
 func isMissingDir(err error) bool {
 	// I'm not sure why we get EINVAL for missing path components sometimes. It happens on MacOS. I
 	// wonder if it would happen the same on other OS.
-	return errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOENT)
+	return errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOENT) || errors.Is(err, fs.ErrNotExist)
 }
 
 func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
