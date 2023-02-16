@@ -10,13 +10,13 @@ import (
 )
 
 func TestDoubleClose(t *testing.T) {
-	ps := NewPubSub()
+	var ps PubSub[any]
 	ps.Close()
 	ps.Close()
 }
 
 func testBroadcast(t testing.TB, subs, vals int) {
-	ps := NewPubSub()
+	var ps PubSub[int]
 	var wg sync.WaitGroup
 	for range iter.N(subs) {
 		wg.Add(1)
@@ -25,7 +25,7 @@ func testBroadcast(t testing.TB, subs, vals int) {
 			defer wg.Done()
 			var e int
 			for i := range s.Values {
-				assert.Equal(t, e, i.(int))
+				assert.Equal(t, e, i)
 				e++
 			}
 			assert.Equal(t, vals, e)
@@ -49,7 +49,7 @@ func BenchmarkBroadcast(b *testing.B) {
 }
 
 func TestCloseSubscription(t *testing.T) {
-	ps := NewPubSub()
+	var ps PubSub[int]
 	ps.Publish(1)
 	s := ps.Subscribe()
 	select {
@@ -69,6 +69,6 @@ func TestCloseSubscription(t *testing.T) {
 	ps.Close()
 	require.Equal(t, 3, <-s2.Values)
 	require.Equal(t, 4, <-s2.Values)
-	require.Nil(t, <-s2.Values)
+	require.Zero(t, <-s2.Values)
 	s2.Close()
 }

@@ -67,11 +67,13 @@ func TestCache(t *testing.T) {
 	assert.True(t, missinggo.FilePathExists(filepath.Join(td, filepath.FromSlash("cache/dir/"))))
 	assert.Equal(t, 1, c.Info().NumItems)
 
-	c.Remove("dir/blah")
-	assert.False(t, missinggo.FilePathExists(filepath.Join(td, filepath.FromSlash("cache/dir/blah"))))
-	assert.False(t, missinggo.FilePathExists(filepath.Join(td, filepath.FromSlash("cache/dir/"))))
 	_, err = f.ReadAt(nil, 0)
 	assert.NotEqual(t, io.EOF, err)
+	f.Close()
+	
+	require.NoError(t, c.Remove("dir/blah"))
+	assert.False(t, missinggo.FilePathExists(filepath.Join(td, filepath.FromSlash("cache/dir/blah"))))
+	assert.False(t, missinggo.FilePathExists(filepath.Join(td, filepath.FromSlash("cache/dir/"))))
 
 	a, err := c.OpenFile("/a", os.O_CREATE|os.O_WRONLY)
 	defer a.Close()
