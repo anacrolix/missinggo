@@ -2,13 +2,13 @@ package filecache
 
 import (
 	"errors"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
 	"sync"
 	"syscall"
 	"time"
-	"io/fs"
 
 	"github.com/anacrolix/log"
 
@@ -289,8 +289,8 @@ func (me *Cache) TrimToCapacity() {
 	me.trimToCapacity()
 }
 
-func (me *Cache) pruneEmptyDirs(path key) {
-	pruneEmptyDirs(me.root, me.realpath(path))
+func (me *Cache) pruneEmptyDirs(path key) error {
+	return pruneEmptyDirs(me.root, me.realpath(path))
 }
 
 func (me *Cache) remove(path key) error {
@@ -298,14 +298,17 @@ func (me *Cache) remove(path key) error {
 	if os.IsNotExist(err) {
 		err = nil
 	}
-	if err != nil {
-		return err
+	//if err != nil {
+	//	return err
+	//}
+	pruneErr := me.pruneEmptyDirs(path)
+	if err == nil {
+		err = pruneErr
 	}
-	me.pruneEmptyDirs(path)
 	me.updateItem(path, func(*itemState, bool) bool {
 		return false
 	})
-	return nil
+	return err
 }
 
 func (me *Cache) trimToCapacity() {
@@ -313,7 +316,11 @@ func (me *Cache) trimToCapacity() {
 		return
 	}
 	for me.filled > me.capacity {
-		me.remove(me.policy.Choose().(key))
+		// We can fail to remove things on Windows. We can get stuck in an infinite loop here I
+		// think.
+		if me.remove(me.policy.Choose().(key)) != nil {
+			//return
+		}
 	}
 }
 
