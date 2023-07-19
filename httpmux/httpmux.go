@@ -11,7 +11,9 @@ import (
 	"go.opencensus.io/trace"
 )
 
-var pathParamContextKey = new(struct{})
+type pathParamContextKeyType struct{}
+
+var pathParamContextKey pathParamContextKeyType
 
 type Mux struct {
 	handlers []Handler
