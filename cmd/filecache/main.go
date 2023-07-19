@@ -11,10 +11,10 @@ import (
 	"strconv"
 
 	_ "github.com/anacrolix/envpprof"
+	"github.com/anacrolix/missinggo/filecache"
 	"github.com/anacrolix/tagflag"
 	"github.com/dustin/go-humanize"
 
-	"github.com/anacrolix/missinggo/filecache"
 	"github.com/anacrolix/missinggo/v2"
 )
 

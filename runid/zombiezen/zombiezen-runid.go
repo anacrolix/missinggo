@@ -1,9 +1,10 @@
 package zombiezen_runid
 
 import (
+	"github.com/anacrolix/missinggo/expect"
 	"zombiezen.com/go/sqlite"
 	"zombiezen.com/go/sqlite/sqlitex"
-	"github.com/anacrolix/missinggo/expect"
+
 	"github.com/anacrolix/missinggo/v2/runid"
 )
 

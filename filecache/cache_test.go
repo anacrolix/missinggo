@@ -70,7 +70,7 @@ func TestCache(t *testing.T) {
 	_, err = f.ReadAt(nil, 0)
 	assert.NotEqual(t, io.EOF, err)
 	f.Close()
-	
+
 	require.NoError(t, c.Remove("dir/blah"))
 	assert.False(t, missinggo.FilePathExists(filepath.Join(td, filepath.FromSlash("cache/dir/blah"))))
 	assert.False(t, missinggo.FilePathExists(filepath.Join(td, filepath.FromSlash("cache/dir/"))))

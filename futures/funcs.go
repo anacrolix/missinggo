@@ -5,9 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bradfitz/iter"
-
 	"github.com/anacrolix/missinggo/slices"
+	"github.com/bradfitz/iter"
 )
 
 // Sends each future as it completes on the returned chan, closing it when

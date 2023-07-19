@@ -5,11 +5,10 @@ import (
 	"testing"
 
 	"github.com/RoaringBitmap/roaring"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"github.com/anacrolix/missinggo/iter"
 	"github.com/anacrolix/missinggo/slices"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEmptyBitmap(t *testing.T) {

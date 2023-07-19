@@ -4,9 +4,8 @@ import (
 	"math"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/anacrolix/missinggo/iter"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestEmpty(t *testing.T) {

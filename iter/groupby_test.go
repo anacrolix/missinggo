@@ -3,10 +3,9 @@ package iter
 import (
 	"testing"
 
+	"github.com/anacrolix/missinggo/slices"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/anacrolix/missinggo/slices"
 )
 
 func TestGroupByKey(t *testing.T) {

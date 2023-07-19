@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/anacrolix/missinggo/httptoo"
+
 	"github.com/anacrolix/missinggo/v2"
 )
 

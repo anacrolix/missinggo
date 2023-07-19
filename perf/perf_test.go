@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	_ "github.com/anacrolix/envpprof"
-
 	"github.com/bradfitz/iter"
 )
 

@@ -10,11 +10,10 @@ import (
 	"time"
 
 	_ "github.com/anacrolix/envpprof"
-	"github.com/bradfitz/iter"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/anacrolix/stm"
 	"github.com/anacrolix/stm/stmutil"
+	"github.com/bradfitz/iter"
+	"github.com/stretchr/testify/assert"
 )
 
 func entry(id int) Entry {

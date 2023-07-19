@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/anacrolix/missinggo/orderedmap"
+
 	"github.com/anacrolix/missinggo/v2"
 )
 
