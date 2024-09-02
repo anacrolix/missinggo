@@ -18,6 +18,7 @@ require (
 	github.com/ryszard/goskiplist v0.0.0-20150312221310-2dfbae5fcf46
 	github.com/stretchr/testify v1.4.0
 	go.opencensus.io v0.22.3
+	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
 	zombiezen.com/go/sqlite v0.12.0
 )
 
