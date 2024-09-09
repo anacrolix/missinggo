@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/anacrolix/missinggo/futures"
+	"github.com/anacrolix/missinggo/v3/futures"
 )
 
 var lazyValuesContextKey = new(byte)

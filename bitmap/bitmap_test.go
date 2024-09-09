@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/RoaringBitmap/roaring"
-	"github.com/anacrolix/missinggo/iter"
-	"github.com/anacrolix/missinggo/slices"
+	"github.com/anacrolix/missinggo/v3/iter"
+	"github.com/anacrolix/missinggo/v3/slices"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

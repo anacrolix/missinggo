@@ -1,11 +1,11 @@
 package zombiezen_runid
 
 import (
-	"github.com/anacrolix/missinggo/expect"
+	"github.com/anacrolix/missinggo/v3/expect"
 	"zombiezen.com/go/sqlite"
 	"zombiezen.com/go/sqlite/sqlitex"
 
-	"github.com/anacrolix/missinggo/v2/runid"
+	"github.com/anacrolix/missinggo/v3/runid"
 )
 
 func New(db *sqlite.Conn) *runid.T {

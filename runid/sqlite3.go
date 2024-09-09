@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/anacrolix/missinggo/expect"
+	"github.com/anacrolix/missinggo/v3/expect"
 )
 
 type T int64

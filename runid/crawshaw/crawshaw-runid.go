@@ -3,9 +3,9 @@ package crawshaw_runid
 import (
 	"crawshaw.io/sqlite"
 	"crawshaw.io/sqlite/sqlitex"
-	"github.com/anacrolix/missinggo/expect"
+	"github.com/anacrolix/missinggo/v3/expect"
 
-	"github.com/anacrolix/missinggo/v2/runid"
+	"github.com/anacrolix/missinggo/v3/runid"
 )
 
 func New(db *sqlite.Conn) *runid.T {

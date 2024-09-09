@@ -1,21 +1,15 @@
-module github.com/anacrolix/missinggo/v2
+module github.com/anacrolix/missinggo/v3
 
 require (
 	crawshaw.io/sqlite v0.3.2
 	github.com/RoaringBitmap/roaring v0.4.23
 	github.com/anacrolix/envpprof v1.1.0
-	github.com/anacrolix/log v0.6.0
-	github.com/anacrolix/missinggo v1.2.1
-	github.com/anacrolix/stm v0.2.0
 	github.com/anacrolix/tagflag v1.1.0
 	github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8
 	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
-	github.com/dustin/go-humanize v1.0.0
-	github.com/google/btree v1.0.0
 	github.com/huandu/xstrings v1.3.2
 	github.com/prometheus/client_golang v1.11.1
 	github.com/prometheus/client_model v0.2.0
-	github.com/ryszard/goskiplist v0.0.0-20150312221310-2dfbae5fcf46
 	github.com/stretchr/testify v1.4.0
 	go.opencensus.io v0.22.3
 	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
@@ -23,10 +17,12 @@ require (
 )
 
 require (
-	github.com/benbjohnson/immutable v0.2.0 // indirect
+	github.com/anacrolix/log v0.6.0 // indirect
+	github.com/anacrolix/missinggo v1.2.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/glycerine/go-unsnap-stream v0.0.0-20190901134440-81cf024a9e0a // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.4.3 // indirect

@@ -9,9 +9,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/anacrolix/missinggo/httptoo"
+	"github.com/anacrolix/missinggo/v3/httptoo"
 
-	"github.com/anacrolix/missinggo/v2"
+	"github.com/anacrolix/missinggo/v3"
 )
 
 type File struct {

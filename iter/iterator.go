@@ -1,6 +1,6 @@
 package iter
 
-import "github.com/anacrolix/missinggo/slices"
+import "github.com/anacrolix/missinggo/v3/slices"
 
 type Iterator interface {
 	// Advances to the next value. Returns false if there are no more values.

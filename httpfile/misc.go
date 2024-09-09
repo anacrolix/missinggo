@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/anacrolix/missinggo/httptoo"
+	"github.com/anacrolix/missinggo/v3/httptoo"
 )
 
 var (

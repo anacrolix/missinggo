@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anacrolix/missinggo/slices"
+	"github.com/anacrolix/missinggo/v3/slices"
 	"github.com/bradfitz/iter"
 )
 

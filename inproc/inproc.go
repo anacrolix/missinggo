@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anacrolix/missinggo/v2"
+	"github.com/anacrolix/missinggo/v3"
 )
 
 var (

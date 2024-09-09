@@ -3,7 +3,7 @@ package iter
 import (
 	"testing"
 
-	"github.com/anacrolix/missinggo/slices"
+	"github.com/anacrolix/missinggo/v3/slices"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
