@@ -6,9 +6,9 @@ import (
 	"reflect"
 )
 
-func NotNil(x any) {
+func isNil(x any) (ret bool) {
 	if x == nil {
-		return
+		return true
 	}
 	defer func() {
 		r := recover()
@@ -24,7 +24,11 @@ func NotNil(x any) {
 			panic(r)
 		}
 	}()
-	if !reflect.ValueOf(x).IsNil() {
+	return reflect.ValueOf(x).IsNil()
+}
+
+func NotNil(x any) {
+	if !isNil(x) {
 		panic(x)
 	}
 }
