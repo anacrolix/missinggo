@@ -1,6 +1,7 @@
 package missinggo
 
 import (
+	qt "github.com/frankban/quicktest"
 	"net/url"
 	"testing"
 
@@ -18,4 +19,25 @@ func TestURLOpaquePath(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "/sqlite3.db", u.Path)
 	assert.Equal(t, "/sqlite3.db", URLOpaquePath(u))
+}
+
+func testSchemePopping(t *testing.T, opaque string, expectedPath string) {
+	searchDb := &url.URL{
+		Scheme: "caterwaul",
+		Opaque: "pebble:" + opaque,
+	}
+	c := qt.New(t)
+	scheme, poppedUrlStr := PopScheme(searchDb)
+	c.Check(scheme, qt.Equals, "caterwaul")
+	poppedUrl, err := url.Parse(poppedUrlStr)
+	c.Assert(err, qt.IsNil)
+	scheme, poppedUrlStr = PopScheme(poppedUrl)
+	c.Check(scheme, qt.Equals, "pebble")
+	c.Check(poppedUrlStr, qt.Equals, expectedPath)
+}
+
+func TestSchemePopping(t *testing.T) {
+	testSchemePopping(t, "caterwaul-pebble-search", "caterwaul-pebble-search")
+	testSchemePopping(t, "/home/derp/cove/caterwaul-pebble-search", "/home/derp/cove/caterwaul-pebble-search")
+	testSchemePopping(t, `C:\Users\derp\LocalData\`, `C:\Users\derp\LocalData\`)
 }
