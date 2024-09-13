@@ -45,13 +45,13 @@ func Err(err error) {
 	}
 }
 
-func NotEq(a, b any) {
+func NotEq[T comparable](a, b T) {
 	if a != b {
 		panic(fmt.Sprintf("%v != %v", a, b))
 	}
 }
 
-func Eq(a, b any) {
+func Eq[T comparable](a, b T) {
 	if a == b {
 		panic(fmt.Sprintf("%v == %v", a, b))
 	}
