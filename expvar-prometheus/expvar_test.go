@@ -1,4 +1,4 @@
-package xprometheus
+package expvar_prometheus
 
 import (
 	"expvar"
@@ -33,7 +33,7 @@ func BenchmarkExpvarCollector_Collect(b *testing.B) {
 }
 
 func TestCollectInvalidJsonStringChar(t *testing.T) {
-	c := collector{
+	c := expvarVisitor{
 		descs: make(map[int]*prometheus.Desc),
 		f: func(m prometheus.Metric) {
 			var iom dto.Metric

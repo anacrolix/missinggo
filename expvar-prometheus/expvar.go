@@ -1,22 +1,32 @@
-package xprometheus
+// Package expvar_prometheus provides a Prometheus collector for Go expvar. It exposes all variables
+// it can automatically.
+package expvar_prometheus
 
 import (
 	"encoding/json"
 	"expvar"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/bradfitz/iter"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// A Prometheus collector that exposes all vars.
-type expvarCollector struct {
+func init() {
+	prometheus.MustRegister(NewExpvarCollector())
+	http.Handle("/debug/prometheus_default", promhttp.Handler())
+}
+
+// A Prometheus collector that exposes all Go expvars.
+type Collector struct {
 	descs map[int]*prometheus.Desc
 }
 
-func NewExpvarCollector() expvarCollector {
-	return expvarCollector{
+func NewCollector() Collector {
+	// This could probably be a global instance.
+	return Collector{
 		descs: make(map[int]*prometheus.Desc),
 	}
 }
@@ -29,19 +39,19 @@ const (
 var desc = prometheus.NewDesc(fqName, help, nil, nil)
 
 // Describe implements Collector.
-func (e expvarCollector) Describe(ch chan<- *prometheus.Desc) {
+func (e Collector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- desc
 }
 
 // Collect implements Collector.
-func (e expvarCollector) Collect(ch chan<- prometheus.Metric) {
+func (e Collector) Collect(ch chan<- prometheus.Metric) {
 	expvar.Do(func(kv expvar.KeyValue) {
 		// I think this is very noisy, and there seems to be good support for exporting its
 		// information in a more structured way.
 		if kv.Key == "memstats" {
 			return
 		}
-		collector{
+		expvarVisitor{
 			f: func(m prometheus.Metric) {
 				ch <- m
 			},
@@ -58,21 +68,23 @@ func labels(n int) (ls []string) {
 	return
 }
 
-type collector struct {
+// Walks expvar.Vars emitting metrics into f. Extends labelValues and creates new value instances as
+// it descends.
+type expvarVisitor struct {
 	f           func(prometheus.Metric)
 	labelValues []string
 	descs       map[int]*prometheus.Desc
 }
 
-func (c *collector) newMetric(f float64) {
+func (c expvarVisitor) newMetric(f float64) {
 	c.f(prometheus.MustNewConstMetric(
 		c.desc(),
 		prometheus.UntypedValue,
-		float64(f),
+		f,
 		c.labelValues...))
 }
 
-func (c collector) desc() *prometheus.Desc {
+func (c expvarVisitor) desc() *prometheus.Desc {
 	d, ok := c.descs[len(c.labelValues)]
 	if !ok {
 		d = prometheus.NewDesc(fqName, "", labels(len(c.labelValues)), nil)
@@ -81,11 +93,11 @@ func (c collector) desc() *prometheus.Desc {
 	return d
 }
 
-func (c collector) metricError(err error) {
+func (c expvarVisitor) metricError(err error) {
 	c.f(prometheus.NewInvalidMetric(c.desc(), err))
 }
 
-func (c collector) withLabelValue(lv string) collector {
+func (c expvarVisitor) withLabelValue(lv string) expvarVisitor {
 	//if !utf8.ValidString(lv) {
 	//	lv = strconv.Quote(lv)
 	//}
@@ -93,7 +105,7 @@ func (c collector) withLabelValue(lv string) collector {
 	return c
 }
 
-func (c collector) collectJsonValue(v interface{}) {
+func (c expvarVisitor) collectJsonValue(v interface{}) {
 	switch v := v.(type) {
 	case float64:
 		c.newMetric(v)
@@ -125,7 +137,7 @@ func (c collector) collectJsonValue(v interface{}) {
 	}
 }
 
-func (c collector) collectVar(v expvar.Var) {
+func (c expvarVisitor) collectVar(v expvar.Var) {
 	//switch _v := v.(type) {
 	//case *expvar.Map:
 	//	_v.Do(func(kv expvar.KeyValue) {
@@ -135,7 +147,7 @@ func (c collector) collectVar(v expvar.Var) {
 	//}
 	var jv interface{}
 	if err := json.Unmarshal([]byte(v.String()), &jv); err != nil {
-		c.metricError(fmt.Errorf("error unmarshaling Var json: %s", err))
+		c.metricError(fmt.Errorf("error unmarshaling Var json: %w", err))
 	}
 	c.collectJsonValue(jv)
 }
