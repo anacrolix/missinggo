@@ -15,8 +15,14 @@ import (
 )
 
 func init() {
-	prometheus.MustRegister(NewExpvarCollector())
 	http.Handle("/debug/prometheus_default", promhttp.Handler())
+}
+
+// Register a collector with the default Prometheus registry. We can't do this by default in case
+// people are transitioning from missinggo/xprometheus. The collector could be a global instance
+// since it is stateless?
+func RegisterDefault() {
+	prometheus.MustRegister(NewExpvarCollector())
 }
 
 // A Prometheus collector that exposes all Go expvars.
