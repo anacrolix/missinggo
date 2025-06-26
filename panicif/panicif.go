@@ -96,3 +96,10 @@ func Zero[T comparable](x T) {
 		panic("is zero")
 	}
 }
+
+func NotZero[T comparable](x T) {
+	var zero T
+	if x != zero {
+		panic("is not zero")
+	}
+}
