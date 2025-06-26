@@ -30,6 +30,13 @@ func allowCORS(h http.Handler) http.Handler {
 	})
 }
 
+func logAccess(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("got request from %v for %v", r.RemoteAddr, r.URL.Path)
+		h.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	var flags = struct {
 		Addr string
@@ -48,5 +55,5 @@ func main() {
 	defer l.Close()
 	addr := l.Addr()
 	log.Printf("serving %q at %s", dir, addr)
-	log.Fatal(http.Serve(l, allowCORS(http.FileServer(http.Dir(dir)))))
+	log.Fatal(http.Serve(l, logAccess(allowCORS(http.FileServer(http.Dir(dir))))))
 }
