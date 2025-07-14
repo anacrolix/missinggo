@@ -84,9 +84,21 @@ func GreaterThan[T constraints.Ordered](a, b T) {
 	}
 }
 
+func GreaterThanOrEqual[T constraints.Ordered](a, b T) {
+	if a >= b {
+		panic(fmt.Sprintf("%v >= %v", a, b))
+	}
+}
+
 func LessThan[T constraints.Ordered](a, b T) {
 	if a < b {
 		panic(fmt.Sprintf("%v < %v", a, b))
+	}
+}
+
+func LessThanOrEqual[T constraints.Ordered](a, b T) {
+	if a <= b {
+		panic(fmt.Sprintf("%v <= %v", a, b))
 	}
 }
 
