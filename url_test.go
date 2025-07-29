@@ -1,9 +1,10 @@
 package missinggo
 
 import (
-	qt "github.com/frankban/quicktest"
 	"net/url"
 	"testing"
+
+	qt "github.com/frankban/quicktest"
 
 	"github.com/stretchr/testify/assert"
 )
