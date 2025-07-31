@@ -6,7 +6,7 @@ require (
 	github.com/anacrolix/envpprof v1.1.0
 	github.com/anacrolix/log v0.6.0
 	github.com/anacrolix/missinggo v1.2.1
-	github.com/anacrolix/stm v0.2.0
+	github.com/anacrolix/stm v0.5.0
 	github.com/anacrolix/tagflag v1.1.0
 	github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8
 	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
@@ -24,7 +24,8 @@ require (
 )
 
 require (
-	github.com/benbjohnson/immutable v0.2.0 // indirect
+	github.com/alecthomas/atomic v0.1.0-alpha2 // indirect
+	github.com/benbjohnson/immutable v0.4.1-0.20221220213129-8932b999621d // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -58,4 +59,4 @@ require (
 	modernc.org/sqlite v1.20.0 // indirect
 )
 
-go 1.18
+go 1.20

@@ -67,7 +67,7 @@ func TestInstanceSetNoMaxEntries(t *testing.T) {
 	}
 	waitForNumWaiters := func(num int) {
 		stm.Atomically(stm.VoidOperation(func(tx *stm.Tx) {
-			tx.Assert(tx.Get(i.waiters).(stmutil.Settish).Len() == num)
+			tx.Assert(i.waiters.Get(tx).(stmutil.Settish[any]).Len() == num)
 		}))
 	}
 	waitForNumWaiters(4)
@@ -106,9 +106,9 @@ func TestUnlimitedInstance(t *testing.T) {
 	i.Timeout = func(Entry) time.Duration { return 0 }
 	eh := i.WaitDefault(context.Background(), entry(0))
 	assert.NotNil(t, eh)
-	assert.EqualValues(t, stmutil.GetLeft(stm.AtomicGet(i.entries).(stmutil.Mappish).Get(eh.e)).(stmutil.Settish).Len(), 1)
+	assert.EqualValues(t, stmutil.GetLeft(stm.AtomicGet(i.entries).(stmutil.Mappish[any, any]).Get(eh.e)).(stmutil.Settish[any]).Len(), 1)
 	eh.Done()
-	assert.Nil(t, stmutil.GetLeft(stm.AtomicGet(i.entries).(stmutil.Mappish).Get(eh.e)))
+	assert.Nil(t, stmutil.GetLeft(stm.AtomicGet(i.entries).(stmutil.Mappish[any, any]).Get(eh.e)))
 }
 
 func TestUnlimitedInstanceContextCanceled(t *testing.T) {
@@ -119,16 +119,16 @@ func TestUnlimitedInstanceContextCanceled(t *testing.T) {
 	cancel()
 	eh := i.WaitDefault(ctx, entry(0))
 	assert.NotNil(t, eh)
-	assert.EqualValues(t, stmutil.GetLeft(stm.AtomicGet(i.entries).(stmutil.Mappish).Get(eh.e)).(stmutil.Settish).Len(), 1)
+	assert.EqualValues(t, stmutil.GetLeft(stm.AtomicGet(i.entries).(stmutil.Mappish[any, any]).Get(eh.e)).(stmutil.Settish[any]).Len(), 1)
 	eh.Done()
-	assert.Nil(t, stmutil.GetLeft(stm.AtomicGet(i.entries).(stmutil.Mappish).Get(eh.e)))
+	assert.Nil(t, stmutil.GetLeft(stm.AtomicGet(i.entries).(stmutil.Mappish[any, any]).Get(eh.e)))
 }
 
 func TestContextCancelledWhileWaiting(t *testing.T) {
 	i := NewInstance()
 	i.SetMaxEntries(0)
 	ctx, cancel := context.WithCancel(context.Background())
-	assert.EqualValues(t, stm.AtomicGet(i.waiters).(stmutil.Settish).Len(), 0)
+	assert.EqualValues(t, stm.AtomicGet(i.waiters).(stmutil.Settish[any]).Len(), 0)
 	waitReturned := make(chan struct{})
 	go func() {
 		eh := i.WaitDefault(ctx, entry(0))
@@ -136,12 +136,12 @@ func TestContextCancelledWhileWaiting(t *testing.T) {
 		close(waitReturned)
 	}()
 	stm.Atomically(stm.VoidOperation(func(tx *stm.Tx) {
-		tx.Assert(tx.Get(i.waiters).(stmutil.Settish).Len() == 1)
+		tx.Assert(i.waiters.Get(tx).(stmutil.Settish[any]).Len() == 1)
 	}))
 	cancel()
 	<-waitReturned
-	assert.EqualValues(t, stm.AtomicGet(i.entries).(stmutil.Mappish).Len(), 0)
-	assert.EqualValues(t, stm.AtomicGet(i.waiters).(stmutil.Settish).Len(), 0)
+	assert.EqualValues(t, stm.AtomicGet(i.entries).(stmutil.Mappish[any, any]).Len(), 0)
+	assert.EqualValues(t, stm.AtomicGet(i.waiters).(stmutil.Settish[any]).Len(), 0)
 }
 
 func TestRaceWakeAndContextCompletion(t *testing.T) {
@@ -180,7 +180,7 @@ func testPriority(t testing.TB, n int) {
 		}(j)
 	}
 	stm.Atomically(stm.VoidOperation(func(tx *stm.Tx) {
-		tx.Assert(tx.Get(i.waiters).(stmutil.Lenner).Len() == n)
+		tx.Assert(i.waiters.Get(tx).(stmutil.Lenner).Len() == n)
 	}))
 	select {
 	case <-ehs:
