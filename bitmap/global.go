@@ -1,6 +1,6 @@
 package bitmap
 
-import "github.com/RoaringBitmap/roaring"
+import "github.com/RoaringBitmap/roaring/v2"
 
 func Sub(left, right Bitmap) Bitmap {
 	return Bitmap{
