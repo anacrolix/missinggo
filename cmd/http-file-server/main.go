@@ -30,10 +30,19 @@ func allowCORS(h http.Handler) http.Handler {
 	})
 }
 
+type loggingResponseWriter struct {
+	http.ResponseWriter
+}
+
+func (w loggingResponseWriter) WriteHeader(statusCode int) {
+	log.Printf("response status: %d", statusCode)
+	w.ResponseWriter.WriteHeader(statusCode)
+}
+
 func logAccess(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("got request from %v for %v", r.RemoteAddr, r.URL.Path)
-		h.ServeHTTP(w, r)
+		h.ServeHTTP(loggingResponseWriter{w}, r)
 	})
 }
 
