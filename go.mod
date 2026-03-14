@@ -2,7 +2,7 @@ module github.com/anacrolix/missinggo/v2
 
 require (
 	crawshaw.io/sqlite v0.3.2
-	github.com/RoaringBitmap/roaring v0.4.23
+	github.com/RoaringBitmap/roaring/v2 v2.15.0
 	github.com/anacrolix/envpprof v1.1.0
 	github.com/anacrolix/log v0.6.0
 	github.com/anacrolix/missinggo v1.2.1
@@ -17,16 +17,18 @@ require (
 	github.com/prometheus/client_golang v1.11.1
 	github.com/prometheus/client_model v0.2.0
 	github.com/ryszard/goskiplist v0.0.0-20150312221310-2dfbae5fcf46
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.11.1
 	go.opencensus.io v0.22.3
 	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
 	zombiezen.com/go/sqlite v0.12.0
 )
 
 require (
+	github.com/RoaringBitmap/roaring v0.4.23 // indirect
 	github.com/alecthomas/atomic v0.1.0-alpha2 // indirect
 	github.com/benbjohnson/immutable v0.4.1-0.20221220213129-8932b999621d // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/bits-and-blooms/bitset v1.24.2 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/glycerine/go-unsnap-stream v0.0.0-20190901134440-81cf024a9e0a // indirect
@@ -34,7 +36,7 @@ require (
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/uuid v1.3.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
@@ -52,11 +54,11 @@ require (
 	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.26.0-rc.1 // indirect
-	gopkg.in/yaml.v2 v2.3.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/libc v1.21.5 // indirect
 	modernc.org/mathutil v1.5.0 // indirect
 	modernc.org/memory v1.4.0 // indirect
 	modernc.org/sqlite v1.20.0 // indirect
 )
 
-go 1.20
+go 1.24.0
