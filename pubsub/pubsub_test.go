@@ -48,6 +48,14 @@ func BenchmarkBroadcast(b *testing.B) {
 	}
 }
 
+func BenchmarkPublishNoSubscribers(b *testing.B) {
+	b.ReportAllocs()
+	var ps PubSub[int]
+	for b.Loop() {
+		ps.Publish(0)
+	}
+}
+
 func TestCloseSubscription(t *testing.T) {
 	var ps PubSub[int]
 	ps.Publish(1)
