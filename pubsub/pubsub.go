@@ -5,9 +5,10 @@ import (
 )
 
 type PubSub[T any] struct {
-	mu     sync.Mutex
-	next   chan item[T]
-	closed bool
+	mu          sync.Mutex
+	next        chan item[T]
+	closed      bool
+	subscribers int
 }
 
 type item[T any] struct {
@@ -20,6 +21,7 @@ type Subscription[T any] struct {
 	Values chan T
 	mu     sync.Mutex
 	closed chan struct{}
+	ps     *PubSub[T]
 }
 
 func (me *PubSub[T]) init() {
@@ -38,15 +40,17 @@ func (me *PubSub[T]) lazyInit() {
 }
 
 func (me *PubSub[T]) Publish(v T) {
-	me.lazyInit()
-	next := make(chan item[T], 1)
-	i := item[T]{v, next}
 	me.mu.Lock()
-	if !me.closed {
-		me.next <- i
-		me.next = next
+	defer me.mu.Unlock()
+	// With no subscribers there's nothing to deliver to, and a later Subscribe resumes from the
+	// current me.next, so the value would be dropped regardless. Skip the channel allocation and send.
+	// A subscriber always lazyInits me.next before incrementing the count, so me.next is non-nil here.
+	if me.closed || me.subscribers == 0 {
+		return
 	}
-	me.mu.Unlock()
+	next := make(chan item[T], 1)
+	me.next <- item[T]{v, next}
+	me.next = next
 }
 
 func (me *Subscription[T]) Close() {
@@ -56,6 +60,9 @@ func (me *Subscription[T]) Close() {
 	case <-me.closed:
 	default:
 		close(me.closed)
+		me.ps.mu.Lock()
+		me.ps.subscribers--
+		me.ps.mu.Unlock()
 	}
 }
 
@@ -92,9 +99,11 @@ func (me *PubSub[T]) Subscribe() (ret *Subscription[T]) {
 	ret = &Subscription[T]{
 		closed: make(chan struct{}),
 		Values: make(chan T),
+		ps:     me,
 	}
 	me.mu.Lock()
 	ret.next = me.next
+	me.subscribers++
 	me.mu.Unlock()
 	go ret.runner()
 	return
