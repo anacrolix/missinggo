@@ -53,6 +53,13 @@ func (me *PubSub[T]) Publish(v T) {
 	me.next = next
 }
 
+// NumSubs returns the number of active subscribers.
+func (me *PubSub[T]) NumSubs() int {
+	me.mu.Lock()
+	defer me.mu.Unlock()
+	return me.subscribers
+}
+
 func (me *Subscription[T]) Close() {
 	me.mu.Lock()
 	defer me.mu.Unlock()
