@@ -5,7 +5,8 @@ import (
 	"testing"
 
 	"github.com/bradfitz/iter"
-	"github.com/stretchr/testify/assert"
+
+	"github.com/go-quicktest/qt"
 )
 
 type refTest struct {
@@ -48,9 +49,9 @@ func (me *refTest) run() {
 	}
 	wg.Wait()
 	me.t.Logf("created %d objects", len(me.objs))
-	assert.True(me.t, len(me.objs) >= 1)
+	qt.Check(me.t, qt.IsTrue(len(me.objs) >= 1))
 	for obj := range me.objs {
-		assert.True(me.t, obj.closed)
+		qt.Check(me.t, qt.IsTrue(obj.closed))
 	}
 }
 

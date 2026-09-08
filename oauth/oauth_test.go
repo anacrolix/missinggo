@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/go-quicktest/qt"
 )
 
 func TestDecodePatreonUserProfile(t *testing.T) {
@@ -58,7 +57,7 @@ func TestDecodePatreonUserProfile(t *testing.T) {
         "self": "https://api.patreon.com/user/6126463"
     }
 }`), &pup)
-	require.NoError(t, err)
-	assert.EqualValues(t, "anacrolix@gmail.com", pup.Data.Attributes.Email)
-	assert.True(t, pup.Data.Attributes.IsEmailVerified)
+	qt.Assert(t, qt.IsNil(err))
+	qt.Check(t, qt.Equals(pup.Data.Attributes.Email, "anacrolix@gmail.com"))
+	qt.Check(t, qt.IsTrue(pup.Data.Attributes.IsEmailVerified))
 }

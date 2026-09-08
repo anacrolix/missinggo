@@ -5,67 +5,68 @@ import (
 	"testing"
 
 	"github.com/anacrolix/missinggo/iter"
-	"github.com/stretchr/testify/assert"
+
+	"github.com/go-quicktest/qt"
 )
 
 func TestEmpty(t *testing.T) {
 	var pb PriorityBitmap
 	it := iter.NewIterator(&pb)
-	assert.Panics(t, func() { it.Value() })
-	assert.False(t, it.Next())
+	qt.Check(t, qt.PanicMatches(func() { it.Value() }, ".*"))
+	qt.Check(t, qt.IsFalse(it.Next()))
 }
 
 func TestIntBounds(t *testing.T) {
 	var pb PriorityBitmap
-	assert.True(t, pb.Set(math.MaxInt32, math.MinInt32))
-	assert.True(t, pb.Set(math.MinInt32, math.MaxInt32))
-	assert.EqualValues(t, []interface{}{math.MaxInt32, math.MinInt32}, iter.IterableAsSlice(&pb))
+	qt.Check(t, qt.IsTrue(pb.Set(math.MaxInt32, math.MinInt32)))
+	qt.Check(t, qt.IsTrue(pb.Set(math.MinInt32, math.MaxInt32)))
+	qt.Check(t, qt.DeepEquals(iter.IterableAsSlice(&pb), []interface{}{math.MaxInt32, math.MinInt32}))
 }
 
 func TestDistinct(t *testing.T) {
 	var pb PriorityBitmap
-	assert.True(t, pb.Set(0, 0))
+	qt.Check(t, qt.IsTrue(pb.Set(0, 0)))
 	pb.Set(1, 1)
-	assert.EqualValues(t, []interface{}{0, 1}, iter.IterableAsSlice(&pb))
+	qt.Check(t, qt.DeepEquals(iter.IterableAsSlice(&pb), []interface{}{0, 1}))
 	pb.Set(0, -1)
-	assert.EqualValues(t, []interface{}{0, 1}, iter.IterableAsSlice(&pb))
+	qt.Check(t, qt.DeepEquals(iter.IterableAsSlice(&pb), []interface{}{0, 1}))
 	pb.Set(1, -2)
-	assert.EqualValues(t, []interface{}{1, 0}, iter.IterableAsSlice(&pb))
+	qt.Check(t, qt.DeepEquals(iter.IterableAsSlice(&pb), []interface{}{1, 0}))
 }
 
 func TestNextAfterIterFinished(t *testing.T) {
 	var pb PriorityBitmap
 	pb.Set(0, 0)
 	it := iter.NewIterator(&pb)
-	assert.True(t, it.Next())
-	assert.False(t, it.Next())
-	assert.False(t, it.Next())
+	qt.Check(t, qt.IsTrue(it.Next()))
+	qt.Check(t, qt.IsFalse(it.Next()))
+	qt.Check(t, qt.IsFalse(it.Next()))
 }
 
 func TestMutationResults(t *testing.T) {
 	var pb PriorityBitmap
-	assert.False(t, pb.Remove(1))
-	assert.True(t, pb.Set(1, -1))
-	assert.True(t, pb.Set(1, 2))
-	assert.True(t, pb.Set(2, 2))
-	assert.True(t, pb.Set(2, -1))
-	assert.False(t, pb.Set(1, 2))
-	assert.EqualValues(t, []interface{}{2, 1}, iter.IterableAsSlice(&pb))
-	assert.True(t, pb.Set(1, -1))
-	assert.False(t, pb.Remove(0))
-	assert.True(t, pb.Remove(1))
-	assert.False(t, pb.Remove(0))
-	assert.False(t, pb.Remove(1))
-	assert.True(t, pb.Remove(2))
-	assert.False(t, pb.Remove(2))
-	assert.False(t, pb.Remove(0))
-	assert.True(t, pb.IsEmpty())
-	assert.Len(t, iter.IterableAsSlice(&pb), 0)
+	qt.Check(t, qt.IsFalse(pb.Remove(1)))
+	qt.Check(t, qt.IsTrue(pb.Set(1, -1)))
+	qt.Check(t, qt.IsTrue(pb.Set(1, 2)))
+	qt.Check(t, qt.IsTrue(pb.Set(2, 2)))
+	qt.Check(t, qt.IsTrue(pb.Set(2, -1)))
+	qt.Check(t, qt.IsFalse(pb.Set(1, 2)))
+	qt.Check(t, qt.DeepEquals(iter.IterableAsSlice(&pb), []interface{}{2, 1}))
+	qt.Check(t, qt.IsTrue(pb.Set(1, -1)))
+	qt.Check(t, qt.IsFalse(pb.Remove(0)))
+	qt.Check(t, qt.IsTrue(pb.Remove(1)))
+	qt.Check(t, qt.IsFalse(pb.Remove(0)))
+	qt.Check(t, qt.IsFalse(pb.Remove(1)))
+	qt.Check(t, qt.IsTrue(pb.Remove(2)))
+	qt.Check(t, qt.IsFalse(pb.Remove(2)))
+	qt.Check(t, qt.IsFalse(pb.Remove(0)))
+	qt.Check(t, qt.IsTrue(pb.IsEmpty()))
+	qt.Check(t, qt.HasLen(iter.IterableAsSlice(&pb), 0))
 }
 
 func TestDoubleRemove(t *testing.T) {
 	var pb PriorityBitmap
-	assert.True(t, pb.Set(0, 0))
-	assert.True(t, pb.Remove(0))
-	assert.False(t, pb.Remove(0))
+	qt.Check(t, qt.IsTrue(pb.Set(0, 0)))
+	qt.Check(t, qt.IsTrue(pb.Remove(0)))
+	qt.Check(t, qt.IsFalse(pb.Remove(0)))
 }

@@ -4,12 +4,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/go-quicktest/qt"
 )
 
 func TestCacheControlHeaderString(t *testing.T) {
-	assert.Equal(t, "public, max-age=43200", CacheControlHeader{
+	qt.Check(t, qt.Equals(CacheControlHeader{
 		MaxAge:  12 * time.Hour,
 		Caching: Public,
-	}.String())
+	}.String(), "public, max-age=43200"))
 }

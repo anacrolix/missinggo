@@ -5,14 +5,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/go-quicktest/qt"
 )
 
 func TestFileInfoAccessTime(t *testing.T) {
 	f, err := ioutil.TempFile("", "")
-	require.NoError(t, err)
-	assert.NoError(t, f.Close())
+	qt.Assert(t, qt.IsNil(err))
+	qt.Check(t, qt.IsNil(f.Close()))
 	name := f.Name()
 	t.Log(name)
 	defer func() {
@@ -22,6 +21,6 @@ func TestFileInfoAccessTime(t *testing.T) {
 		}
 	}()
 	fi, err := os.Stat(name)
-	require.NoError(t, err)
+	qt.Assert(t, qt.IsNil(err))
 	t.Log(FileInfoAccessTime(fi))
 }

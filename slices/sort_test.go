@@ -3,7 +3,7 @@ package slices
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/go-quicktest/qt"
 )
 
 func TestSort(t *testing.T) {
@@ -11,5 +11,5 @@ func TestSort(t *testing.T) {
 	Sort(a, func(left, right int) bool {
 		return left < right
 	})
-	assert.EqualValues(t, []int{1, 2, 3}, a)
+	qt.Check(t, qt.DeepEquals(a, []int{1, 2, 3}))
 }

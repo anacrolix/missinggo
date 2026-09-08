@@ -13,7 +13,8 @@ import (
 	"github.com/anacrolix/stm"
 	"github.com/anacrolix/stm/stmutil"
 	"github.com/bradfitz/iter"
-	"github.com/stretchr/testify/assert"
+
+	"github.com/go-quicktest/qt"
 )
 
 func entry(id int) Entry {
@@ -81,9 +82,9 @@ func TestWaitReturnsNilContextCompleted(t *testing.T) {
 	i.SetMaxEntries(0)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	assert.Nil(t, i.WaitDefault(ctx, entry(0)))
+	qt.Check(t, qt.IsNil(i.WaitDefault(ctx, entry(0))))
 	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Millisecond)
-	assert.Nil(t, i.WaitDefault(ctx, entry(1)))
+	qt.Check(t, qt.IsNil(i.WaitDefault(ctx, entry(1))))
 	cancel()
 }
 
@@ -94,7 +95,7 @@ func TestWaitContextCanceledButRoomForEntry(t *testing.T) {
 	go cancel()
 	eh := i.WaitDefault(ctx, entry(0))
 	if eh == nil {
-		assert.Error(t, ctx.Err())
+		qt.Check(t, qt.IsNotNil(ctx.Err()))
 	} else {
 		eh.Done()
 	}
@@ -105,10 +106,10 @@ func TestUnlimitedInstance(t *testing.T) {
 	i.SetNoMaxEntries()
 	i.Timeout = func(Entry) time.Duration { return 0 }
 	eh := i.WaitDefault(context.Background(), entry(0))
-	assert.NotNil(t, eh)
-	assert.EqualValues(t, stmutil.GetLeft(stm.AtomicGet(i.entries).(stmutil.Mappish[any, any]).Get(eh.e)).(stmutil.Settish[any]).Len(), 1)
+	qt.Check(t, qt.IsNotNil(eh))
+	qt.Check(t, qt.Equals(1, stmutil.GetLeft(stm.AtomicGet(i.entries).(stmutil.Mappish[any, any]).Get(eh.e)).(stmutil.Settish[any]).Len()))
 	eh.Done()
-	assert.Nil(t, stmutil.GetLeft(stm.AtomicGet(i.entries).(stmutil.Mappish[any, any]).Get(eh.e)))
+	qt.Check(t, qt.IsNil(stmutil.GetLeft(stm.AtomicGet(i.entries).(stmutil.Mappish[any, any]).Get(eh.e))))
 }
 
 func TestUnlimitedInstanceContextCanceled(t *testing.T) {
@@ -118,21 +119,21 @@ func TestUnlimitedInstanceContextCanceled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	eh := i.WaitDefault(ctx, entry(0))
-	assert.NotNil(t, eh)
-	assert.EqualValues(t, stmutil.GetLeft(stm.AtomicGet(i.entries).(stmutil.Mappish[any, any]).Get(eh.e)).(stmutil.Settish[any]).Len(), 1)
+	qt.Check(t, qt.IsNotNil(eh))
+	qt.Check(t, qt.Equals(1, stmutil.GetLeft(stm.AtomicGet(i.entries).(stmutil.Mappish[any, any]).Get(eh.e)).(stmutil.Settish[any]).Len()))
 	eh.Done()
-	assert.Nil(t, stmutil.GetLeft(stm.AtomicGet(i.entries).(stmutil.Mappish[any, any]).Get(eh.e)))
+	qt.Check(t, qt.IsNil(stmutil.GetLeft(stm.AtomicGet(i.entries).(stmutil.Mappish[any, any]).Get(eh.e))))
 }
 
 func TestContextCancelledWhileWaiting(t *testing.T) {
 	i := NewInstance()
 	i.SetMaxEntries(0)
 	ctx, cancel := context.WithCancel(context.Background())
-	assert.EqualValues(t, stm.AtomicGet(i.waiters).(stmutil.Settish[any]).Len(), 0)
+	qt.Check(t, qt.Equals(0, stm.AtomicGet(i.waiters).(stmutil.Settish[any]).Len()))
 	waitReturned := make(chan struct{})
 	go func() {
 		eh := i.WaitDefault(ctx, entry(0))
-		assert.Nil(t, eh)
+		qt.Check(t, qt.IsNil(eh))
 		close(waitReturned)
 	}()
 	stm.Atomically(stm.VoidOperation(func(tx *stm.Tx) {
@@ -140,8 +141,8 @@ func TestContextCancelledWhileWaiting(t *testing.T) {
 	}))
 	cancel()
 	<-waitReturned
-	assert.EqualValues(t, stm.AtomicGet(i.entries).(stmutil.Mappish[any, any]).Len(), 0)
-	assert.EqualValues(t, stm.AtomicGet(i.waiters).(stmutil.Settish[any]).Len(), 0)
+	qt.Check(t, qt.Equals(0, stm.AtomicGet(i.entries).(stmutil.Mappish[any, any]).Len()))
+	qt.Check(t, qt.Equals(0, stm.AtomicGet(i.waiters).(stmutil.Settish[any]).Len()))
 }
 
 func TestRaceWakeAndContextCompletion(t *testing.T) {
@@ -162,8 +163,8 @@ func TestRaceWakeAndContextCompletion(t *testing.T) {
 	<-waitReturned
 	cancel()
 	eh0.Forget()
-	assert.EqualValues(t, stm.AtomicGet(i.entries).(stmutil.Lenner).Len(), 0)
-	assert.EqualValues(t, stm.AtomicGet(i.waiters).(stmutil.Lenner).Len(), 0)
+	qt.Check(t, qt.Equals(0, stm.AtomicGet(i.entries).(stmutil.Lenner).Len()))
+	qt.Check(t, qt.Equals(0, stm.AtomicGet(i.waiters).(stmutil.Lenner).Len()))
 }
 
 func TestPriority(t *testing.T) {
@@ -190,7 +191,7 @@ func testPriority(t testing.TB, n int) {
 	i.SetMaxEntries(1)
 	for j := range iter.N(n) {
 		eh := <-ehs
-		assert.EqualValues(t, entry(n-j-1), eh.e)
+		qt.Check(t, qt.Equals(eh.e, entry(n-j-1)))
 		//log.Print(eh.priority)
 		eh.Forget()
 	}

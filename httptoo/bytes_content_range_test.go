@@ -3,7 +3,7 @@ package httptoo
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/go-quicktest/qt"
 )
 
 func TestParseHTTPContentRange(t *testing.T) {
@@ -20,9 +20,9 @@ func TestParseHTTPContentRange(t *testing.T) {
 		{"  bytes=*/56", &BytesContentRange{-1, -1, 56}},
 	} {
 		ret, ok := ParseBytesContentRange(_case.h)
-		assert.Equal(t, _case.cr != nil, ok)
+		qt.Check(t, qt.Equals(ok, _case.cr != nil))
 		if _case.cr != nil {
-			assert.Equal(t, *_case.cr, ret)
+			qt.Check(t, qt.Equals(ret, *_case.cr))
 		}
 	}
 }

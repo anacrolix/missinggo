@@ -3,12 +3,12 @@ package missinggo
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/go-quicktest/qt"
 )
 
 func TestEmptyValue(t *testing.T) {
-	assert.True(t, IsZeroValue(false))
-	assert.False(t, IsZeroValue(true))
+	qt.Check(t, qt.IsTrue(IsZeroValue(false)))
+	qt.Check(t, qt.IsFalse(IsZeroValue(true)))
 }
 
 func TestUnexportedField(t *testing.T) {
@@ -19,12 +19,12 @@ func TestUnexportedField(t *testing.T) {
 	}
 	fooInstance := FooType1{}
 
-	assert.True(t, IsZeroValue(fooInstance))
+	qt.Check(t, qt.IsTrue(IsZeroValue(fooInstance)))
 
 	fooInstance2 := FooType1{fish: "fishy"}
-	assert.False(t, IsZeroValue(fooInstance2))
+	qt.Check(t, qt.IsFalse(IsZeroValue(fooInstance2)))
 
 	fooInstance3 := FooType1{Bar: 5}
 
-	assert.False(t, IsZeroValue(fooInstance3))
+	qt.Check(t, qt.IsFalse(IsZeroValue(fooInstance3)))
 }

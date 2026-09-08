@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/anacrolix/missinggo/slices"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+
+	"github.com/go-quicktest/qt"
 )
 
 func TestGroupByKey(t *testing.T) {
@@ -15,7 +15,7 @@ func TestGroupByKey(t *testing.T) {
 		ks = append(ks, gb.Value().(Group).Key().(byte))
 	}
 	t.Log(ks)
-	require.EqualValues(t, "ABCDAB", ks)
+	qt.Assert(t, qt.Equals(string(ks), "ABCDAB"))
 }
 
 func TestGroupByList(t *testing.T) {
@@ -39,9 +39,9 @@ func TestGroupByNiladicKey(t *testing.T) {
 	var ss []byte
 	g := ToSlice(ToFunc(gb.Value().(Iterator)))
 	slices.MakeInto(&ss, g)
-	assert.Equal(t, s, string(ss))
+	qt.Check(t, qt.Equals(string(ss), s))
 }
 
 func TestNilEqualsNil(t *testing.T) {
-	assert.False(t, nil == uniqueKey)
+	qt.Check(t, qt.IsFalse(nil == uniqueKey))
 }

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/go-quicktest/qt"
 )
 
 // Calls suite with the used time.Now function used by MonotonicNow replaced
@@ -35,18 +35,18 @@ func TestMonotonicTime(t *testing.T) {
 	withCustomStdNow(stdNowSeqFunc([]int64{2, 1, 3, 3, 2, 3}), func() {
 		i0 := MonotonicNow() // 0
 		i1 := MonotonicNow() // 1
-		assert.EqualValues(t, 0, i0.Sub(i1))
-		assert.EqualValues(t, 2, MonotonicSince(i0)) // 2
-		assert.EqualValues(t, 2, MonotonicSince(i1)) // 3
+		qt.Check(t, qt.Equals(i0.Sub(i1), 0))
+		qt.Check(t, qt.Equals(MonotonicSince(i0), 2)) // 2
+		qt.Check(t, qt.Equals(MonotonicSince(i1), 2)) // 3
 		i4 := MonotonicNow()
-		assert.EqualValues(t, 2, i4.Sub(i0))
-		assert.EqualValues(t, 2, i4.Sub(i1))
+		qt.Check(t, qt.Equals(i4.Sub(i0), 2))
+		qt.Check(t, qt.Equals(i4.Sub(i1), 2))
 		i5 := MonotonicNow()
-		assert.EqualValues(t, 3, i5.Sub(i0))
-		assert.EqualValues(t, 3, i5.Sub(i1))
-		assert.EqualValues(t, 1, i5.Sub(i4))
+		qt.Check(t, qt.Equals(i5.Sub(i0), 3))
+		qt.Check(t, qt.Equals(i5.Sub(i1), 3))
+		qt.Check(t, qt.Equals(i5.Sub(i4), 1))
 	})
 	// Ensure that skew and time function are restored correctly and within
 	// reasonable bounds.
-	assert.True(t, MonotonicSince(started) >= 0 && MonotonicSince(started) < time.Second)
+	qt.Check(t, qt.IsTrue(MonotonicSince(started) >= 0 && MonotonicSince(started) < time.Second))
 }

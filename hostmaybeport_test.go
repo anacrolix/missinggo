@@ -3,28 +3,28 @@ package missinggo
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/go-quicktest/qt"
 )
 
 func TestSplitHostMaybePortNoPort(t *testing.T) {
 	hmp := SplitHostMaybePort("some.domain")
-	assert.Equal(t, "some.domain", hmp.Host)
-	assert.True(t, hmp.NoPort)
-	assert.NoError(t, hmp.Err)
+	qt.Check(t, qt.Equals(hmp.Host, "some.domain"))
+	qt.Check(t, qt.IsTrue(hmp.NoPort))
+	qt.Check(t, qt.IsNil(hmp.Err))
 }
 
 func TestSplitHostMaybePortPort(t *testing.T) {
 	hmp := SplitHostMaybePort("some.domain:123")
-	assert.Equal(t, "some.domain", hmp.Host)
-	assert.Equal(t, 123, hmp.Port)
-	assert.False(t, hmp.NoPort)
-	assert.NoError(t, hmp.Err)
+	qt.Check(t, qt.Equals(hmp.Host, "some.domain"))
+	qt.Check(t, qt.Equals(hmp.Port, 123))
+	qt.Check(t, qt.IsFalse(hmp.NoPort))
+	qt.Check(t, qt.IsNil(hmp.Err))
 }
 
 func TestSplitHostMaybePortBadPort(t *testing.T) {
 	hmp := SplitHostMaybePort("some.domain:wat")
-	assert.Equal(t, "some.domain", hmp.Host)
-	assert.Equal(t, -1, hmp.Port)
-	assert.False(t, hmp.NoPort)
-	assert.Error(t, hmp.Err)
+	qt.Check(t, qt.Equals(hmp.Host, "some.domain"))
+	qt.Check(t, qt.Equals(hmp.Port, -1))
+	qt.Check(t, qt.IsFalse(hmp.NoPort))
+	qt.Check(t, qt.IsNotNil(hmp.Err))
 }

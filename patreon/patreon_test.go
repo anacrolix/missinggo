@@ -4,19 +4,18 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/go-quicktest/qt"
 )
 
 func TestParsePledges(t *testing.T) {
 	f, err := os.Open("testdata/pledges")
-	require.NoError(t, err)
+	qt.Assert(t, qt.IsNil(err))
 	defer f.Close()
 	ps, err := ParsePledgesApiResponse(f)
-	require.NoError(t, err)
-	assert.EqualValues(t, []Pledge{{
+	qt.Assert(t, qt.IsNil(err))
+	qt.Check(t, qt.DeepEquals(ps, []Pledge{{
 		Email:         "yonhyaro@gmail.com",
 		EmailVerified: true,
 		AmountCents:   200,
-	}}, ps)
+	}}))
 }

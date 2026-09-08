@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/bradfitz/iter"
-	"github.com/stretchr/testify/assert"
+
+	"github.com/go-quicktest/qt"
 )
 
 // Delay unit, high enough that system slowness doesn't affect timing, but low
@@ -33,7 +34,7 @@ func TestAsCompletedDelayed(t *testing.T) {
 	)
 	a := func(f, when time.Duration) {
 		t.Helper()
-		assert.Equal(t, fs[f], <-as)
+		qt.Check(t, qt.Equals(<-as, fs[f]))
 		if time.Since(s) < when*u {
 			t.Errorf("%d completed too soon", f)
 		}
@@ -46,8 +47,8 @@ func TestAsCompletedDelayed(t *testing.T) {
 	a(2, 2)
 	a(0, 2)
 	_, ok := <-as
-	assert.False(t, ok)
-	assert.True(t, time.Since(s) < 4*u)
+	qt.Check(t, qt.IsFalse(ok))
+	qt.Check(t, qt.IsTrue(time.Since(s) < 4*u))
 }
 
 func TestAsCompletedDelayedContextCanceled(t *testing.T) {
@@ -70,7 +71,7 @@ func TestAsCompletedDelayedContextCanceled(t *testing.T) {
 	)
 	a := func(f, when time.Duration) {
 		t.Helper()
-		assert.Equal(t, fs[f], <-as)
+		qt.Check(t, qt.Equals(<-as, fs[f]))
 		if time.Since(s) < when*u {
 			t.Errorf("%d completed too soon", f)
 		}
@@ -81,6 +82,6 @@ func TestAsCompletedDelayedContextCanceled(t *testing.T) {
 	a(0, 0)
 	cancel()
 	_, ok := <-as
-	assert.False(t, ok)
-	assert.True(t, time.Since(s) < 1*u)
+	qt.Check(t, qt.IsFalse(ok))
+	qt.Check(t, qt.IsTrue(time.Since(s) < 1*u))
 }

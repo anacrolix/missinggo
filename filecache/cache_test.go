@@ -8,167 +8,167 @@ import (
 	"testing"
 
 	"github.com/bradfitz/iter"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/anacrolix/missinggo/v2"
+
+	"github.com/go-quicktest/qt"
 )
 
 func TestCache(t *testing.T) {
 	td, err := ioutil.TempDir("", "gotest")
-	require.NoError(t, err)
+	qt.Assert(t, qt.IsNil(err))
 	defer os.RemoveAll(td)
 
 	c, err := NewCache(filepath.Join(td, "cache"))
-	require.NoError(t, err)
-	assert.EqualValues(t, CacheInfo{
+	qt.Assert(t, qt.IsNil(err))
+	qt.Check(t, qt.Equals(c.Info(), CacheInfo{
 		Filled:   0,
 		Capacity: -1,
 		NumItems: 0,
-	}, c.Info())
+	}))
 
 	c.WalkItems(func(i ItemInfo) {})
 
 	_, err = c.OpenFile("/", os.O_CREATE)
-	assert.NotNil(t, err)
+	qt.Check(t, qt.IsNotNil(err))
 
 	_, err = c.OpenFile("", os.O_CREATE)
-	assert.NotNil(t, err)
+	qt.Check(t, qt.IsNotNil(err))
 
 	c.WalkItems(func(i ItemInfo) {})
 
-	require.Equal(t, CacheInfo{
+	qt.Assert(t, qt.Equals(c.Info(), CacheInfo{
 		Filled:   0,
 		Capacity: -1,
 		NumItems: 0,
-	}, c.Info())
+	}))
 
 	_, err = c.OpenFile("notexist", 0)
-	assert.True(t, os.IsNotExist(err), err)
+	qt.Check(t, qt.IsTrue(os.IsNotExist(err)), qt.Commentf("%v", err))
 
 	_, err = c.OpenFile("/notexist", 0)
-	assert.True(t, os.IsNotExist(err), err)
+	qt.Check(t, qt.IsTrue(os.IsNotExist(err)), qt.Commentf("%v", err))
 
 	_, err = c.OpenFile("/dir/notexist", 0)
-	assert.True(t, os.IsNotExist(err), err)
+	qt.Check(t, qt.IsTrue(os.IsNotExist(err)), qt.Commentf("%v", err))
 
 	f, err := c.OpenFile("dir/blah", os.O_CREATE)
-	require.NoError(t, err)
+	qt.Assert(t, qt.IsNil(err))
 	defer f.Close()
-	require.Equal(t, CacheInfo{
+	qt.Assert(t, qt.Equals(c.Info(), CacheInfo{
 		Filled:   0,
 		Capacity: -1,
 		NumItems: 1,
-	}, c.Info())
+	}))
 
 	c.WalkItems(func(i ItemInfo) {})
 
-	assert.True(t, missinggo.FilePathExists(filepath.Join(td, filepath.FromSlash("cache/dir/blah"))))
-	assert.True(t, missinggo.FilePathExists(filepath.Join(td, filepath.FromSlash("cache/dir/"))))
-	assert.Equal(t, 1, c.Info().NumItems)
+	qt.Check(t, qt.IsTrue(missinggo.FilePathExists(filepath.Join(td, filepath.FromSlash("cache/dir/blah")))))
+	qt.Check(t, qt.IsTrue(missinggo.FilePathExists(filepath.Join(td, filepath.FromSlash("cache/dir/")))))
+	qt.Check(t, qt.Equals(c.Info().NumItems, 1))
 
 	_, err = f.ReadAt(nil, 0)
-	assert.NotEqual(t, io.EOF, err)
+	qt.Check(t, qt.Not(qt.Equals(err, io.EOF)))
 	f.Close()
 
-	require.NoError(t, c.Remove("dir/blah"))
-	assert.False(t, missinggo.FilePathExists(filepath.Join(td, filepath.FromSlash("cache/dir/blah"))))
-	assert.False(t, missinggo.FilePathExists(filepath.Join(td, filepath.FromSlash("cache/dir/"))))
+	qt.Assert(t, qt.IsNil(c.Remove("dir/blah")))
+	qt.Check(t, qt.IsFalse(missinggo.FilePathExists(filepath.Join(td, filepath.FromSlash("cache/dir/blah")))))
+	qt.Check(t, qt.IsFalse(missinggo.FilePathExists(filepath.Join(td, filepath.FromSlash("cache/dir/")))))
 
 	a, err := c.OpenFile("/a", os.O_CREATE|os.O_WRONLY)
 	defer a.Close()
-	require.NoError(t, err)
+	qt.Assert(t, qt.IsNil(err))
 	b, err := c.OpenFile("b", os.O_CREATE|os.O_WRONLY)
 	defer b.Close()
-	require.NoError(t, err)
+	qt.Assert(t, qt.IsNil(err))
 	c.mu.Lock()
-	assert.False(t, c.pathInfo("a").Accessed.After(c.pathInfo("b").Accessed))
+	qt.Check(t, qt.IsFalse(c.pathInfo("a").Accessed.After(c.pathInfo("b").Accessed)))
 	c.mu.Unlock()
 	n, err := a.WriteAt([]byte("hello"), 0)
-	assert.NoError(t, err)
-	assert.EqualValues(t, 5, n)
-	assert.EqualValues(t, CacheInfo{
+	qt.Check(t, qt.IsNil(err))
+	qt.Check(t, qt.Equals(n, 5))
+	qt.Check(t, qt.Equals(c.Info(), CacheInfo{
 		Filled:   5,
 		Capacity: -1,
 		NumItems: 2,
-	}, c.Info())
-	assert.False(t, c.pathInfo("b").Accessed.After(c.pathInfo("a").Accessed))
+	}))
+	qt.Check(t, qt.IsFalse(c.pathInfo("b").Accessed.After(c.pathInfo("a").Accessed)))
 
 	// Reopen a, to check that the info values remain correct.
-	assert.NoError(t, a.Close())
+	qt.Check(t, qt.IsNil(a.Close()))
 	a, err = c.OpenFile("a", 0)
-	require.NoError(t, err)
-	require.EqualValues(t, CacheInfo{
+	qt.Assert(t, qt.IsNil(err))
+	qt.Assert(t, qt.Equals(c.Info(), CacheInfo{
 		Filled:   5,
 		Capacity: -1,
 		NumItems: 2,
-	}, c.Info())
+	}))
 
 	c.SetCapacity(5)
-	require.EqualValues(t, CacheInfo{
+	qt.Assert(t, qt.Equals(c.Info(), CacheInfo{
 		Filled:   5,
 		Capacity: 5,
 		NumItems: 2,
-	}, c.Info())
+	}))
 
 	n, err = a.WriteAt([]byte(" world"), 5)
-	assert.Error(t, err)
+	qt.Check(t, qt.IsNotNil(err))
 	n, err = b.WriteAt([]byte("boom!"), 0)
 	// "a" and "b" have been evicted.
-	require.NoError(t, err)
-	require.EqualValues(t, 5, n)
-	require.EqualValues(t, CacheInfo{
+	qt.Assert(t, qt.IsNil(err))
+	qt.Assert(t, qt.Equals(n, 5))
+	qt.Assert(t, qt.Equals(c.Info(), CacheInfo{
 		Filled:   5,
 		Capacity: 5,
 		NumItems: 1,
-	}, c.Info())
+	}))
 }
 
 func TestSanitizePath(t *testing.T) {
-	assert.EqualValues(t, "", sanitizePath("////"))
-	assert.EqualValues(t, "", sanitizePath("/../.."))
-	assert.EqualValues(t, "a", sanitizePath("/a//b/.."))
-	assert.EqualValues(t, "a", sanitizePath("../a"))
-	assert.EqualValues(t, "a", sanitizePath("./a"))
+	qt.Check(t, qt.Equals(sanitizePath("////"), ""))
+	qt.Check(t, qt.Equals(sanitizePath("/../.."), ""))
+	qt.Check(t, qt.Equals(sanitizePath("/a//b/.."), "a"))
+	qt.Check(t, qt.Equals(sanitizePath("../a"), "a"))
+	qt.Check(t, qt.Equals(sanitizePath("./a"), "a"))
 }
 
 func BenchmarkCacheOpenFile(t *testing.B) {
 	td, err := ioutil.TempDir("", "")
-	require.NoError(t, err)
+	qt.Assert(t, qt.IsNil(err))
 	defer os.RemoveAll(td)
 	c, err := NewCache(td)
 	for range iter.N(t.N) {
 		func() {
 			f, err := c.OpenFile("a", os.O_CREATE|os.O_RDWR)
-			require.NoError(t, err)
-			assert.NoError(t, f.Close())
+			qt.Assert(t, qt.IsNil(err))
+			qt.Check(t, qt.IsNil(f.Close()))
 		}()
 	}
 }
 
 func TestFileReadWrite(t *testing.T) {
 	td, err := ioutil.TempDir("", "")
-	require.NoError(t, err)
+	qt.Assert(t, qt.IsNil(err))
 	defer os.RemoveAll(td)
 
 	c, err := NewCache(td)
-	require.NoError(t, err)
+	qt.Assert(t, qt.IsNil(err))
 
 	a, err := c.OpenFile("a", os.O_CREATE|os.O_EXCL|os.O_RDWR)
-	require.NoError(t, err)
+	qt.Assert(t, qt.IsNil(err))
 	defer a.Close()
 
 	for off, c := range []byte("herp") {
 		n, err := a.WriteAt([]byte{c}, int64(off))
-		assert.NoError(t, err)
-		require.EqualValues(t, 1, n)
+		qt.Check(t, qt.IsNil(err))
+		qt.Assert(t, qt.Equals(n, 1))
 	}
 	for off, c := range []byte("herp") {
 		var b [1]byte
 		n, err := a.ReadAt(b[:], int64(off))
-		require.EqualValues(t, 1, n)
-		require.NoError(t, err)
-		assert.EqualValues(t, []byte{c}, b[:])
+		qt.Assert(t, qt.Equals(n, 1))
+		qt.Assert(t, qt.IsNil(err))
+		qt.Check(t, qt.DeepEquals(b[:], []byte{c}))
 	}
 
 }

@@ -3,15 +3,15 @@ package iter
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/go-quicktest/qt"
 )
 
 func TestIterator(t *testing.T) {
 	const s = "AAAABBBCCDAABBB"
 	si := StringIterator(s)
 	for i := range s {
-		require.True(t, si.Next())
-		require.Equal(t, s[i], si.Value().(byte))
+		qt.Assert(t, qt.IsTrue(si.Next()))
+		qt.Assert(t, qt.Equals(si.Value().(byte), s[i]))
 	}
-	require.False(t, si.Next())
+	qt.Assert(t, qt.IsFalse(si.Next()))
 }

@@ -4,7 +4,8 @@ import (
 	"testing"
 
 	"github.com/anacrolix/missinggo/iter"
-	"github.com/stretchr/testify/assert"
+
+	"github.com/go-quicktest/qt"
 )
 
 func slice(om OrderedMap) (ret []interface{}) {
@@ -22,18 +23,18 @@ func TestSimple(t *testing.T) {
 	om.Set(3, 1)
 	om.Set(2, 2)
 	om.Set(1, 3)
-	assert.EqualValues(t, []interface{}{3, 2, 1}, slice(om))
+	qt.Check(t, qt.DeepEquals(slice(om), []interface{}{3, 2, 1}))
 	om.Set(3, 2)
 	om.Unset(2)
-	assert.EqualValues(t, []interface{}{3, 2}, slice(om))
+	qt.Check(t, qt.DeepEquals(slice(om), []interface{}{3, 2}))
 	om.Set(-1, 4)
-	assert.EqualValues(t, []interface{}{4, 3, 2}, slice(om))
+	qt.Check(t, qt.DeepEquals(slice(om), []interface{}{4, 3, 2}))
 }
 
 func TestIterEmpty(t *testing.T) {
 	om := New(nil)
 	it := iter.NewIterator(om)
-	assert.Panics(t, func() { it.Value() })
-	assert.False(t, it.Next())
+	qt.Check(t, qt.PanicMatches(func() { it.Value() }, ".*"))
+	qt.Check(t, qt.IsFalse(it.Next()))
 	it.Stop()
 }

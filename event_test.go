@@ -3,7 +3,7 @@ package missinggo
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/go-quicktest/qt"
 )
 
 func TestSetEvent(t *testing.T) {
@@ -13,7 +13,7 @@ func TestSetEvent(t *testing.T) {
 
 func TestEventIsSet(t *testing.T) {
 	var e Event
-	assert.False(t, e.IsSet())
+	qt.Check(t, qt.IsFalse(e.IsSet()))
 	e.Set()
-	assert.True(t, e.IsSet())
+	qt.Check(t, qt.IsTrue(e.IsSet()))
 }

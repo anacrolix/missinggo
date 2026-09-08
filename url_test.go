@@ -4,22 +4,20 @@ import (
 	"net/url"
 	"testing"
 
-	qt "github.com/frankban/quicktest"
-
-	"github.com/stretchr/testify/assert"
+	"github.com/go-quicktest/qt"
 )
 
 func TestURLOpaquePath(t *testing.T) {
-	assert.Equal(t, "sqlite3://sqlite3.db", (&url.URL{Scheme: "sqlite3", Path: "sqlite3.db"}).String())
+	qt.Check(t, qt.Equals((&url.URL{Scheme: "sqlite3", Path: "sqlite3.db"}).String(), "sqlite3://sqlite3.db"))
 	u, err := url.Parse("sqlite3:sqlite3.db")
-	assert.NoError(t, err)
-	assert.Equal(t, "sqlite3.db", URLOpaquePath(u))
-	assert.Equal(t, "sqlite3:sqlite3.db", (&url.URL{Scheme: "sqlite3", Opaque: "sqlite3.db"}).String())
-	assert.Equal(t, "sqlite3:/sqlite3.db", (&url.URL{Scheme: "sqlite3", Opaque: "/sqlite3.db"}).String())
+	qt.Check(t, qt.IsNil(err))
+	qt.Check(t, qt.Equals(URLOpaquePath(u), "sqlite3.db"))
+	qt.Check(t, qt.Equals((&url.URL{Scheme: "sqlite3", Opaque: "sqlite3.db"}).String(), "sqlite3:sqlite3.db"))
+	qt.Check(t, qt.Equals((&url.URL{Scheme: "sqlite3", Opaque: "/sqlite3.db"}).String(), "sqlite3:/sqlite3.db"))
 	u, err = url.Parse("sqlite3:/sqlite3.db")
-	assert.NoError(t, err)
-	assert.Equal(t, "/sqlite3.db", u.Path)
-	assert.Equal(t, "/sqlite3.db", URLOpaquePath(u))
+	qt.Check(t, qt.IsNil(err))
+	qt.Check(t, qt.Equals(u.Path, "/sqlite3.db"))
+	qt.Check(t, qt.Equals(URLOpaquePath(u), "/sqlite3.db"))
 }
 
 func testSchemePopping(t *testing.T, opaque string, expectedPath string) {
@@ -27,14 +25,13 @@ func testSchemePopping(t *testing.T, opaque string, expectedPath string) {
 		Scheme: "caterwaul",
 		Opaque: "pebble:" + opaque,
 	}
-	c := qt.New(t)
 	scheme, poppedUrlStr := PopScheme(searchDb)
-	c.Check(scheme, qt.Equals, "caterwaul")
+	qt.Check(t, qt.Equals(scheme, "caterwaul"))
 	poppedUrl, err := url.Parse(poppedUrlStr)
-	c.Assert(err, qt.IsNil)
+	qt.Assert(t, qt.IsNil(err))
 	scheme, poppedUrlStr = PopScheme(poppedUrl)
-	c.Check(scheme, qt.Equals, "pebble")
-	c.Check(poppedUrlStr, qt.Equals, expectedPath)
+	qt.Check(t, qt.Equals(scheme, "pebble"))
+	qt.Check(t, qt.Equals(poppedUrlStr, expectedPath))
 }
 
 func TestSchemePopping(t *testing.T) {

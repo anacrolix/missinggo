@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/go-quicktest/qt"
 )
 
 func TestSectionReadSeekerReadBeyondEnd(t *testing.T) {
@@ -14,14 +14,14 @@ func TestSectionReadSeekerReadBeyondEnd(t *testing.T) {
 	srs := NewSectionReadSeeker(base, 1, 1)
 	dest := new(bytes.Buffer)
 	n, err := io.Copy(dest, srs)
-	assert.EqualValues(t, 1, n)
-	assert.NoError(t, err)
+	qt.Check(t, qt.Equals(n, 1))
+	qt.Check(t, qt.IsNil(err))
 }
 
 func TestSectionReadSeekerSeekEnd(t *testing.T) {
 	base := bytes.NewReader([]byte{1, 2, 3})
 	srs := NewSectionReadSeeker(base, 1, 1)
 	off, err := srs.Seek(0, os.SEEK_END)
-	assert.NoError(t, err)
-	assert.EqualValues(t, 1, off)
+	qt.Check(t, qt.IsNil(err))
+	qt.Check(t, qt.Equals(off, 1))
 }

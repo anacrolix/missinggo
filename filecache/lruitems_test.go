@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/go-quicktest/qt"
 )
 
 func TestLruDuplicateAccessTimes(t *testing.T) {
@@ -12,5 +12,5 @@ func TestLruDuplicateAccessTimes(t *testing.T) {
 	now := time.Now()
 	li.Used(key("a"), now)
 	li.Used(key("b"), now)
-	assert.EqualValues(t, 2, li.NumItems())
+	qt.Check(t, qt.Equals(li.NumItems(), 2))
 }

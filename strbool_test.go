@@ -3,7 +3,7 @@ package missinggo
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/go-quicktest/qt"
 )
 
 func TestStringTruth(t *testing.T) {
@@ -15,7 +15,7 @@ func TestStringTruth(t *testing.T) {
 		"0",
 	} {
 		t.Run(s, func(t *testing.T) {
-			assert.False(t, StringTruth(s))
+			qt.Check(t, qt.IsFalse(StringTruth(s)))
 		})
 	}
 	for _, s := range []string{
@@ -23,7 +23,7 @@ func TestStringTruth(t *testing.T) {
 		"t",
 	} {
 		t.Run(s, func(t *testing.T) {
-			assert.True(t, StringTruth(s))
+			qt.Check(t, qt.IsTrue(StringTruth(s)))
 		})
 	}
 }

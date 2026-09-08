@@ -7,8 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/go-quicktest/qt"
 )
 
 const helloWorld = "hello, world\n"
@@ -27,37 +26,37 @@ func requestResponse(h http.Handler, r *http.Request) (*http.Response, error) {
 func TestGzipHandler(t *testing.T) {
 	rr := httptest.NewRecorder()
 	helloWorldHandler(rr, nil)
-	assert.EqualValues(t, helloWorld, rr.Body.String())
+	qt.Check(t, qt.Equals(rr.Body.String(), helloWorld))
 
 	rr = httptest.NewRecorder()
 	GzipHandler(http.HandlerFunc(helloWorldHandler)).ServeHTTP(rr, new(http.Request))
-	assert.EqualValues(t, helloWorld, rr.Body.String())
+	qt.Check(t, qt.Equals(rr.Body.String(), helloWorld))
 
 	rr = httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "/", nil)
-	require.NoError(t, err)
+	qt.Assert(t, qt.IsNil(err))
 	r.Header.Set("Accept-Encoding", "gzip")
 	GzipHandler(http.HandlerFunc(helloWorldHandler)).ServeHTTP(rr, r)
 	gr, err := gzip.NewReader(rr.Body)
-	require.NoError(t, err)
+	qt.Assert(t, qt.IsNil(err))
 	defer gr.Close()
 	b, err := ioutil.ReadAll(gr)
-	require.NoError(t, err)
-	assert.EqualValues(t, helloWorld, b)
+	qt.Assert(t, qt.IsNil(err))
+	qt.Check(t, qt.Equals(string(b), helloWorld))
 
 	s := httptest.NewServer(nil)
 	s.Config.Handler = GzipHandler(http.HandlerFunc(helloWorldHandler))
 	req, err := http.NewRequest("GET", s.URL, nil)
 	req.Header.Set("Accept-Encoding", "gzip")
 	resp, err := http.DefaultClient.Do(req)
-	require.NoError(t, err)
+	qt.Assert(t, qt.IsNil(err))
 	gr.Close()
 	gr, err = gzip.NewReader(resp.Body)
-	require.NoError(t, err)
+	qt.Assert(t, qt.IsNil(err))
 	defer gr.Close()
 	b, err = ioutil.ReadAll(gr)
-	require.NoError(t, err)
-	assert.EqualValues(t, helloWorld, b)
-	assert.EqualValues(t, "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
-	assert.EqualValues(t, "gzip", resp.Header.Get("Content-Encoding"))
+	qt.Assert(t, qt.IsNil(err))
+	qt.Check(t, qt.Equals(string(b), helloWorld))
+	qt.Check(t, qt.Equals(resp.Header.Get("Content-Type"), "text/plain; charset=utf-8"))
+	qt.Check(t, qt.Equals(resp.Header.Get("Content-Encoding"), "gzip"))
 }

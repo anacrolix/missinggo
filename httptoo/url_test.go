@@ -4,16 +4,16 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/go-quicktest/qt"
 )
 
 func TestAppendURL(t *testing.T) {
-	assert.EqualValues(t, "http://localhost:8080/trailing/slash/", AppendURL(
+	qt.Check(t, qt.Equals(AppendURL(
 		&url.URL{Scheme: "http", Host: "localhost:8080"},
 		&url.URL{Path: "/trailing/slash/"},
-	).String())
-	assert.EqualValues(t, "ws://localhost:8080/events?ih=harpdarp", AppendURL(
+	).String(), "http://localhost:8080/trailing/slash/"))
+	qt.Check(t, qt.Equals(AppendURL(
 		&url.URL{Scheme: "http", Host: "localhost:8080"},
 		&url.URL{Scheme: "ws", Path: "/events", RawQuery: "ih=harpdarp"},
-	).String())
+	).String(), "ws://localhost:8080/events?ih=harpdarp"))
 }

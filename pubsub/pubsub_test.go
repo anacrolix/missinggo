@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/bradfitz/iter"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+
+	"github.com/go-quicktest/qt"
 )
 
 func TestDoubleClose(t *testing.T) {
@@ -25,10 +25,10 @@ func testBroadcast(t testing.TB, subs, vals int) {
 			defer wg.Done()
 			var e int
 			for i := range s.Values {
-				assert.Equal(t, e, i)
+				qt.Check(t, qt.Equals(i, e))
 				e++
 			}
-			assert.Equal(t, vals, e)
+			qt.Check(t, qt.Equals(e, vals))
 		}()
 	}
 	for i := range iter.N(vals) {
@@ -68,15 +68,15 @@ func TestCloseSubscription(t *testing.T) {
 	ps.Publish(2)
 	s2 := ps.Subscribe()
 	ps.Publish(3)
-	require.Equal(t, 2, <-s.Values)
-	require.EqualValues(t, 3, <-s.Values)
+	qt.Assert(t, qt.Equals(<-s.Values, 2))
+	qt.Assert(t, qt.Equals(<-s.Values, 3))
 	s.Close()
 	_, ok := <-s.Values
-	require.False(t, ok)
+	qt.Assert(t, qt.IsFalse(ok))
 	ps.Publish(4)
 	ps.Close()
-	require.Equal(t, 3, <-s2.Values)
-	require.Equal(t, 4, <-s2.Values)
-	require.Zero(t, <-s2.Values)
+	qt.Assert(t, qt.Equals(<-s2.Values, 3))
+	qt.Assert(t, qt.Equals(<-s2.Values, 4))
+	qt.Assert(t, qt.Equals(<-s2.Values, 0))
 	s2.Close()
 }
