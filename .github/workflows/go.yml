@@ -24,5 +24,8 @@ jobs:
     - name: Build
       run: go build -v ./...
 
+    - name: Build wasip1
+      run: GOOS=wasip1 GOARCH=wasm go build -v .
+
     - name: Test
       run: go test -v ./...
