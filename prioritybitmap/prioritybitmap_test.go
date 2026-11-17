@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/anacrolix/missinggo/iter"
+	"github.com/anacrolix/missinggo/v2/iter"
 
 	"github.com/go-quicktest/qt"
 )

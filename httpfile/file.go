@@ -9,7 +9,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/anacrolix/missinggo/httptoo"
+	"github.com/anacrolix/missinggo/v2/httptoo"
 
 	"github.com/anacrolix/missinggo/v2"
 )

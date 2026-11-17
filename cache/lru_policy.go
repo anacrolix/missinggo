@@ -3,7 +3,7 @@ package cache
 import (
 	"sync"
 
-	"github.com/anacrolix/missinggo/orderedmap"
+	"github.com/anacrolix/missinggo/v2/orderedmap"
 
 	"github.com/anacrolix/missinggo/v2"
 )
