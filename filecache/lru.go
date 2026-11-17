@@ -3,7 +3,7 @@ package filecache
 import (
 	"time"
 
-	"github.com/anacrolix/missinggo/orderedmap"
+	"github.com/anacrolix/missinggo/v2/orderedmap"
 )
 
 type lru struct {

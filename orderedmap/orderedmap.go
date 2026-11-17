@@ -1,6 +1,6 @@
 package orderedmap
 
-import "github.com/anacrolix/missinggo/iter"
+import "github.com/anacrolix/missinggo/v2/iter"
 
 func New(lesser func(l, r interface{}) bool) OrderedMap {
 	return NewGoogleBTree(lesser)

@@ -4,9 +4,9 @@ package prioritybitmap
 import (
 	"sync"
 
-	"github.com/anacrolix/missinggo/bitmap"
-	"github.com/anacrolix/missinggo/iter"
-	"github.com/anacrolix/missinggo/orderedmap"
+	"github.com/anacrolix/missinggo/v2/bitmap"
+	"github.com/anacrolix/missinggo/v2/iter"
+	"github.com/anacrolix/missinggo/v2/orderedmap"
 )
 
 // The interface used for non-singleton bit-sets for each priority level.
@@ -143,7 +143,7 @@ func (me *PriorityBitmap) Iter(f iter.Callback) {
 	})
 }
 
-func (me *PriorityBitmap) IterTyped(_f func(i bitmap.BitIndex) bool) bool {
+func (me *PriorityBitmap) IterTyped(_f func(i int) bool) bool {
 	if me == nil || me.om == nil {
 		return true
 	}

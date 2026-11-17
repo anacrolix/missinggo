@@ -3,7 +3,7 @@ package crawshaw_runid
 import (
 	"crawshaw.io/sqlite"
 	"crawshaw.io/sqlite/sqlitex"
-	"github.com/anacrolix/missinggo/expect"
+	"github.com/anacrolix/missinggo/v2/expect"
 
 	"github.com/anacrolix/missinggo/v2/runid"
 )
