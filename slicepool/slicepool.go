@@ -31,7 +31,14 @@ func (me *Pool[T]) Get() (ret *[]T) {
 	return ret
 }
 
+// Gets a slice with at least minCap capacity, allocating one if the pool has none suitable.
+//
+// Deprecated: Use [Pool.GetMinCap] (requires Go 1.27).
 func GetMinCap[PoolT any, Cap constraints.Integer](pool *Pool[PoolT], minCap Cap) *[]PoolT {
+	return getMinCap(pool, minCap)
+}
+
+func getMinCap[PoolT any, Cap constraints.Integer](pool *Pool[PoolT], minCap Cap) *[]PoolT {
 	for {
 		gotAny := pool.p.Get()
 		if gotAny == nil {
